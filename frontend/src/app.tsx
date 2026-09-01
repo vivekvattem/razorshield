@@ -778,6 +778,156 @@ const featureCards = [
   "Versioned Audit Trail|Record model, policy, evidence and analyst actions for every assessment.",
   "Honest Evaluation|Report held-out results with a clear synthetic-data limitation.",
 ];
+function IdentityNetworkVisual() {
+  return (
+    <div className="network-preview">
+      <div className="network-preview-head">
+        <div>
+          <b>Identity network</b>
+          <span>Connected return signals</span>
+        </div>
+        <span className="network-status">Coordinated network detected</span>
+      </div>
+      <svg
+        className="network-svg"
+        viewBox="0 0 420 300"
+        role="img"
+        aria-labelledby="network-title network-description"
+      >
+        <title id="network-title">Connected identity network</title>
+        <desc id="network-description">
+          Three customer accounts connect to shared device, payment token and
+          delivery address identities, which converge on one return case.
+        </desc>
+        <defs>
+          <marker
+            id="network-arrow"
+            markerWidth="7"
+            markerHeight="7"
+            refX="6"
+            refY="3.5"
+            orient="auto"
+          >
+            <path d="M0,0 L7,3.5 L0,7 z" fill="#5b789b" />
+          </marker>
+        </defs>
+        <g className="network-edges" markerEnd="url(#network-arrow)">
+          <line x1="68" y1="66" x2="192" y2="82" />
+          <line x1="68" y1="148" x2="192" y2="82" />
+          <line x1="68" y1="148" x2="192" y2="155" />
+          <line x1="68" y1="230" x2="192" y2="228" />
+          <line x1="228" y1="82" x2="322" y2="148" />
+          <line x1="228" y1="155" x2="322" y2="155" />
+          <line x1="228" y1="228" x2="322" y2="162" />
+        </g>
+        <g className="network-node network-customer">
+          <circle cx="68" cy="66" r="28" />
+          <text x="68" y="63" textAnchor="middle">
+            <tspan x="68" dy="0">
+              Customer
+            </tspan>
+            <tspan x="68" dy="13">
+              A
+            </tspan>
+          </text>
+        </g>
+        <g className="network-node network-customer">
+          <circle cx="68" cy="148" r="28" />
+          <text x="68" y="145" textAnchor="middle">
+            <tspan x="68" dy="0">
+              Customer
+            </tspan>
+            <tspan x="68" dy="13">
+              B
+            </tspan>
+          </text>
+        </g>
+        <g className="network-node network-customer">
+          <circle cx="68" cy="230" r="28" />
+          <text x="68" y="227" textAnchor="middle">
+            <tspan x="68" dy="0">
+              Customer
+            </tspan>
+            <tspan x="68" dy="13">
+              C
+            </tspan>
+          </text>
+        </g>
+        <g className="network-node network-identity">
+          <rect x="192" y="58" width="62" height="48" rx="10" />
+          <text x="223" y="78" textAnchor="middle">
+            <tspan x="223" dy="0">
+              Shared
+            </tspan>
+            <tspan x="223" dy="12">
+              Device
+            </tspan>
+          </text>
+          <text className="network-token" x="223" y="121" textAnchor="middle">
+            dev_token_91
+          </text>
+        </g>
+        <g className="network-node network-identity">
+          <rect x="192" y="131" width="62" height="48" rx="10" />
+          <text x="223" y="151" textAnchor="middle">
+            <tspan x="223" dy="0">
+              Payment
+            </tspan>
+            <tspan x="223" dy="12">
+              Token
+            </tspan>
+          </text>
+          <text className="network-token" x="223" y="194" textAnchor="middle">
+            pay_token_42
+          </text>
+        </g>
+        <g className="network-node network-identity">
+          <rect x="192" y="204" width="62" height="48" rx="10" />
+          <text x="223" y="224" textAnchor="middle">
+            <tspan x="223" dy="0">
+              Delivery
+            </tspan>
+            <tspan x="223" dy="12">
+              Address
+            </tspan>
+          </text>
+          <text className="network-token" x="223" y="267" textAnchor="middle">
+            addr_token_07
+          </text>
+        </g>
+        <g className="network-node network-case">
+          <circle cx="350" cy="155" r="34" />
+          <text x="350" y="151" textAnchor="middle">
+            <tspan x="350" dy="0">
+              Return
+            </tspan>
+            <tspan x="350" dy="14">
+              Case
+            </tspan>
+          </text>
+        </g>
+      </svg>
+      <div className="network-summary">
+        <strong>3 accounts, 3 shared identity types</strong>
+        <span>Shared signals converge on one investigation.</span>
+      </div>
+      <div className="network-legend" aria-label="Network legend">
+        <span>
+          <i className="network-legend-dot customer" />
+          Customer
+        </span>
+        <span>
+          <i className="network-legend-dot identity" />
+          Shared identity
+        </span>
+        <span>
+          <i className="network-legend-dot review" />
+          Review case
+        </span>
+      </div>
+    </div>
+  );
+}
 function Home() {
   const q = useQuery({ queryKey: ["home-cases"], queryFn: () => api.cases() });
   if (q.isLoading) return <Skeleton />;
@@ -804,13 +954,7 @@ function Home() {
             Defense-only • Human-gated decisions • Complete audit trail
           </small>
         </div>
-        <div className="network-preview">
-          <b>Linked return network</b>
-          <div className="network-lines">
-            ● ─ ◆ ─ ●<br />\ \ │ /<br />◉ REVIEW
-          </div>
-          <span>Device · payment · address</span>
-        </div>
+        <IdentityNetworkVisual />
       </section>
       <section className="home-section">
         <p>THE BUSINESS PROBLEM</p>
