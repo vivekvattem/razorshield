@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
@@ -149,7 +150,11 @@ def list_cases(
 
 
 def _get_case(session, case_id: str) -> Case:
-    case = session.scalar(select(Case).where(Case.case_id == case_id))
+    try:
+        parsed_case_id = UUID(case_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Case not found") from exc
+    case = session.scalar(select(Case).where(Case.case_id == parsed_case_id))
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found")
     return case
