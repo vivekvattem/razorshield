@@ -155,7 +155,12 @@ def get_case(case_id: str, request: Request) -> dict[str, object]:
             "assessment": {
                 "decision": assessment.decision.value,
                 "final_risk": assessment.final_risk,
+                "ml_probability": assessment.ml_probability,
+                "graph_risk": assessment.graph_risk,
+                "rule_risk": assessment.rule_risk,
                 "evidence": assessment.evidence_snapshot,
+                "model_version": assessment.model_version_id,
+                "policy_version": assessment.policy_version_id,
             },
         }
 
