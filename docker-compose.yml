@@ -17,7 +17,8 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       ENVIRONMENT: development
       DATABASE_URL: postgresql+psycopg://razorshield:razorshield@postgres:5432/razorshield

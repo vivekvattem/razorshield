@@ -98,3 +98,16 @@ Run `make migrate` then `make demo-seed` to create the deterministic bounded dem
 `validation-policy-v1` remains the locked evaluation policy; serving uses the separately
 versioned, validation-derived capacity-guardrail policy `operational-demo-v2` and never
 uses held-out labels to choose thresholds.
+
+## Deployment (Render + Vercel)
+
+Render: create a Blueprint from this repository; `render.yaml` provisions the API and
+PostgreSQL. Set `CORS_ORIGINS` to the exact Vercel HTTPS origin (a JSON array), and keep
+the generated `SECRET_KEY` private. The container deterministically generates and verifies
+the model artifact at build time, then runs Alembic and the idempotent demo seed before
+binding Render's `PORT`. Use `/health` for liveness and `/ready` for database/model readiness.
+
+Vercel: import the same repository with root directory `frontend`, set
+`VITE_API_BASE_URL` to the Render API HTTPS URL, and deploy. `vercel.json` preserves SPA
+routes on refresh. Roll back by redeploying a prior Git commit; database migrations are
+forward-only, so take a managed PostgreSQL backup before schema-changing releases.
