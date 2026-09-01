@@ -11,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.errors import error_payload, request_id_for
 from app.models import AnalystDecision, AuditEvent, Case, Merchant, Order, ReturnRequest, RiskAssessment
 from app.models.enums import AnalystAction, CaseStatus
-from app.schemas.scoring import AnalystDecisionRequest, ReturnScoreRequest
+from app.schemas.scoring import AnalystDecisionRequest, AnalystFeedbackRequest, ReturnScoreRequest
 from app.services.artifacts import ArtifactUnavailable
 from app.services.scoring import score
 
@@ -223,6 +223,42 @@ def case_audit(case_id: str, request: Request) -> dict[str, object]:
                 }
                 for event in events
             ]
+        }
+
+
+@router.post("/api/v1/cases/{case_id}/feedback")
+def case_feedback(case_id: str, payload: AnalystFeedbackRequest, request: Request) -> dict[str, str]:
+    """Append a human disposition without changing the original assessment."""
+    with request.app.state.database.transaction() as session:
+        case = _get_case(session, case_id)
+        session.add(
+            AuditEvent(
+                entity_type="case",
+                entity_id=str(case.case_id),
+                event_type="ANALYST_FEEDBACK",
+                actor_type="analyst",
+                actor_id=request.headers.get("X-Analyst-Id", "analyst"),
+                request_id=request_id_for(request),
+                payload_json={"disposition": payload.disposition, "note": payload.note or ""},
+            )
+        )
+    return {"status": "recorded", "disposition": payload.disposition}
+
+
+@router.get("/api/v1/cases/{case_id}/export")
+def export_case(case_id: str, request: Request) -> dict[str, object]:
+    """Safe evidence export: graph summaries and audit records exclude raw tokens."""
+    with request.app.state.database.transaction() as session:
+        _get_case(session, case_id)
+        detail = get_case(case_id, request)
+        audit = case_audit(case_id, request)
+        graph = case_graph(case_id, request)
+        return {
+            "synthetic_demo": True,
+            "exported_at": datetime.now(UTC).isoformat(),
+            "case": detail,
+            "masked_graph": graph,
+            "audit": audit["items"],
         }
 
 

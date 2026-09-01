@@ -24,5 +24,7 @@ export const api = {
   cases: (page = 1) => call<CaseList>(`/api/v1/cases?page=${page}&size=20`),
   case: (id: string) => call<CaseDetail>(`/api/v1/cases/${id}`), audit: (id: string) => call<{ items: AuditEvent[] }>(`/api/v1/cases/${id}/audit`),
   graph: (id: string) => call<Graph>(`/api/v1/cases/${id}/graph`), decision: (id: string, action: AnalystAction) => call<Case>(`/api/v1/cases/${id}/decision`, { method: "POST", body: JSON.stringify({ action }) }),
+  feedback: (id: string, disposition: string, note = "") => call<{status:string}>(`/api/v1/cases/${id}/feedback`, { method: "POST", body: JSON.stringify({ disposition, note }) }),
+  export: (id: string) => call<Record<string, unknown>>(`/api/v1/cases/${id}/export`),
   model: () => call<ModelMetrics>("/api/v1/metrics/model"), business: () => call<BusinessMetrics>("/api/v1/metrics/business"),
 };

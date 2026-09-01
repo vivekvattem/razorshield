@@ -24,3 +24,8 @@ class ReturnScoreRequest(BaseModel):
 class AnalystDecisionRequest(BaseModel):
     action: Literal["APPROVE_CASE", "DISMISS_CASE", "ESCALATE_CASE"]
     rationale: str | None = Field(default=None, max_length=2000)
+
+
+class AnalystFeedbackRequest(BaseModel):
+    disposition: Literal["CONFIRMED_ABUSE", "LEGITIMATE_RETURN", "INSUFFICIENT_EVIDENCE"]
+    note: str | None = Field(default=None, max_length=2000)
