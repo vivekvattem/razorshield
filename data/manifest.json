@@ -1,0 +1,83 @@
+{
+  "abuse_return_count": 407,
+  "checksums": {
+    "customers": "da9411ce58dfae2acfc0c2b3496d07d5e8ca8f55d5f11f4accfa9f308d95f6d6",
+    "identity_links": "723b7b9711bfb0af84b5cda6411665bd9379808ad22f450ffcd95128dce453d3",
+    "identity_observations": "f61b4c28c0085c35b4193bc74a42a1cdffd750975c4adea4a096344b99ca7e6c",
+    "merchants": "2a04aa5fae5df1e67369787315dcc3e9d0c569b9fa7554e01175c4f0557ef7b0",
+    "orders": "417e67c60a459cb78bd04a2532f10b99f80f612d84e53d77c9c25a4e6589a32a",
+    "products": "1e75238df4de6787125b280bfc18692b03598f40468a8caeab451386765bd7cb",
+    "returns": "5f42bb8ee8b22b533cc06dfca4ada06d3f52236b21e23d726163db45e6cb31da",
+    "splits": "f3d7cfb597e43d9ffac187e809970315926760ca899d787aadb6b10023b6622b"
+  },
+  "class_prevalence": 0.07826923076923077,
+  "configuration": {
+    "customer_count": 3200,
+    "merchant_count": 5,
+    "orders_per_customer": 8,
+    "return_count": 5200,
+    "ring_count": 25,
+    "ring_members": 8,
+    "seed": 20260901
+  },
+  "demo_cases": [
+    "demo-legitimate-return",
+    "demo-suspicious-return",
+    "demo-ring-return"
+  ],
+  "generator_version": "2.0.0",
+  "model_feature_allowlist": [
+    "event_time",
+    "order_value_paise",
+    "product_category",
+    "account_age_days",
+    "hours_from_delivery_to_return",
+    "discount_percentage",
+    "payment_token",
+    "device_token",
+    "address_token",
+    "phone_token",
+    "ip_token",
+    "promo_code",
+    "reason_code",
+    "prior_verified_abuse"
+  ],
+  "prohibited_model_columns": [
+    "abuse_pattern",
+    "is_abuse",
+    "label_noise_applied",
+    "ring_id",
+    "verification_available_at"
+  ],
+  "ring_count": 25,
+  "ring_distribution": {
+    "test": 3,
+    "train": 20,
+    "validation": 2
+  },
+  "row_counts": {
+    "customers": 3200,
+    "identity_links": 16000,
+    "identity_observations": 154000,
+    "merchants": 5,
+    "orders": 25600,
+    "products": 25,
+    "returns": 5200,
+    "splits": 5200
+  },
+  "seed": 20260901,
+  "split_boundaries": {
+    "train_end_exclusive": "2025-10-15T20:05:00Z",
+    "validation_end_exclusive": "2025-12-05T00:00:00Z"
+  },
+  "split_counts": {
+    "test": 822,
+    "train": 3692,
+    "validation": 686
+  },
+  "split_policy": "Chronological boundaries are selected outside ring event ranges; ring members never cross a split.",
+  "time_range": {
+    "end": "2026-03-17T19:16:00Z",
+    "start": "2025-01-06T17:53:00Z"
+  }
+}

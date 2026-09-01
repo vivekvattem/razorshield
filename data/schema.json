@@ -1,0 +1,91 @@
+{
+  "customers": [
+    "customer_id",
+    "merchant_id",
+    "account_created_at",
+    "customer_segment",
+    "ring_id"
+  ],
+  "identity_links": [
+    "customer_id",
+    "merchant_id",
+    "identity_type",
+    "token_hash",
+    "first_seen_at",
+    "last_seen_at",
+    "observation_count"
+  ],
+  "identity_observations": [
+    "observation_id",
+    "customer_id",
+    "merchant_id",
+    "identity_type",
+    "token_hash",
+    "observed_at",
+    "source_event_type",
+    "source_event_id"
+  ],
+  "merchants": [
+    "merchant_id",
+    "merchant_name",
+    "category",
+    "scale_segment",
+    "created_at"
+  ],
+  "orders": [
+    "order_id",
+    "merchant_id",
+    "customer_id",
+    "product_id",
+    "ordered_at",
+    "delivered_at",
+    "order_value_paise",
+    "product_category",
+    "discount_basis_points",
+    "promo_code",
+    "payment_token",
+    "device_token",
+    "address_token",
+    "phone_token",
+    "ip_token"
+  ],
+  "products": [
+    "product_id",
+    "merchant_id",
+    "product_category",
+    "typical_price_paise"
+  ],
+  "returns": [
+    "return_id",
+    "event_time",
+    "merchant_id",
+    "customer_id",
+    "order_id",
+    "order_value_paise",
+    "product_category",
+    "account_age_days",
+    "hours_from_delivery_to_return",
+    "discount_percentage",
+    "payment_token",
+    "device_token",
+    "address_token",
+    "phone_token",
+    "ip_token",
+    "promo_code",
+    "reason_code",
+    "prior_verified_abuse",
+    "known_verified_abuse_before_event",
+    "ring_id",
+    "abuse_pattern",
+    "is_abuse",
+    "label_noise_applied",
+    "verification_available_at",
+    "demo_case"
+  ],
+  "splits": [
+    "return_id",
+    "event_time",
+    "split",
+    "ring_id"
+  ]
+}

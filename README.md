@@ -66,3 +66,17 @@ docker compose down
 
 Copy `.env.example` to `.env` only for local overrides; do not commit it. The
 application never creates tables at startup—apply schema changes through Alembic.
+
+## Phase 2 synthetic data
+
+Generate and validate the deterministic default dataset (compressed CSV under the
+ignored `data/generated/default` directory) with:
+
+```bash
+make data-generate
+make data-validate
+```
+
+`data/schema.json`, `data/model-feature-allowlist.json`, and `data/manifest.json`
+record the dataset contract, prohibited model fields, seed, split boundaries, and
+checksums. The generator contains no model fitting or threshold selection.

@@ -1,4 +1,4 @@
-.PHONY: setup test lint migrate migration-check run docker-up docker-down
+.PHONY: setup test lint migrate migration-check run docker-up docker-down data-generate data-validate
 
 setup:
 	python3.11 -m venv .venv
@@ -25,3 +25,9 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+data-generate:
+	cd backend && ../.venv/bin/python scripts/generate_synthetic_data.py
+
+data-validate:
+	cd backend && ../.venv/bin/python scripts/validate_synthetic_data.py

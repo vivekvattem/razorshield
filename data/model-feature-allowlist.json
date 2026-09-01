@@ -1,0 +1,25 @@
+{
+  "allowlist": [
+    "event_time",
+    "order_value_paise",
+    "product_category",
+    "account_age_days",
+    "hours_from_delivery_to_return",
+    "discount_percentage",
+    "payment_token",
+    "device_token",
+    "address_token",
+    "phone_token",
+    "ip_token",
+    "promo_code",
+    "reason_code",
+    "prior_verified_abuse"
+  ],
+  "prohibited": [
+    "abuse_pattern",
+    "is_abuse",
+    "label_noise_applied",
+    "ring_id",
+    "verification_available_at"
+  ]
+}
