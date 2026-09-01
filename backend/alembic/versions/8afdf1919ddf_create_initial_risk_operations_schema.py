@@ -1,11 +1,7 @@
 """create initial risk operations schema
 
 Revision ID: 8afdf1919ddf
-<<<<<<< HEAD
 Revises:
-=======
-Revises: 
->>>>>>> 58e2af2715e314de060b741992c07c170726891e
 Create Date: 2026-09-01 20:37:03.535174
 """
 

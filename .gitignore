@@ -23,6 +23,7 @@ data/generated/
 artifacts/*.joblib
 artifacts/*.pkl
 artifacts/*.onnx
+artifacts/generated/
 
 # Tooling and operating system files
 .DS_Store

@@ -13,13 +13,7 @@ def request_id_for(request: Request) -> str:
 
 
 def error_payload(code: str, message: str, request_id: str, details: Any = None) -> dict[str, Any]:
-<<<<<<< HEAD
     payload: dict[str, Any] = {"error": {"code": code, "message": message, "request_id": request_id}}
-=======
-    payload: dict[str, Any] = {
-        "error": {"code": code, "message": message, "request_id": request_id}
-    }
->>>>>>> 58e2af2715e314de060b741992c07c170726891e
     if details is not None:
         payload["error"]["details"] = details
     return payload
@@ -33,13 +27,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
     )
 
 
-<<<<<<< HEAD
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-=======
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
->>>>>>> 58e2af2715e314de060b741992c07c170726891e
     return JSONResponse(
         status_code=422,
         content=error_payload(
