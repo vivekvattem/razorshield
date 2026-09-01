@@ -2,40 +2,964 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Route, Routes, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import cytoscape from "cytoscape";
-import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { AnalystAction, api, ApiError, Case, Evidence } from "./api";
 
-const inr = (value: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value / 100);
+const inr = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value / 100);
 const date = (value: string) => new Date(value).toLocaleString();
 const statusClass = (value: string) => value.toLowerCase().replaceAll("_", "-");
-const actions: AnalystAction[] = ["APPROVE_CASE", "DISMISS_CASE", "ESCALATE_CASE"];
-const approvedProblem = "Merchants typically assess returns individually, allowing coordinated refund-abuse rings to hide across multiple accounts sharing devices, payment instruments and addresses. Transaction-only systems miss this network context, while aggressive fraud rules create false positives and delay legitimate refunds.";
-const approvedSolution = "RazorShield combines calibrated machine learning, point-in-time customer behaviour, identity-graph intelligence and transparent rules to detect coordinated abuse. It routes every return to APPROVE, VERIFY or MANUAL REVIEW with explainable evidence, measured false-positive cost and a complete audit trail.";
+const actions: AnalystAction[] = [
+  "APPROVE_CASE",
+  "DISMISS_CASE",
+  "ESCALATE_CASE",
+];
+const approvedProblem =
+  "Merchants typically assess returns individually, allowing coordinated refund-abuse rings to hide across multiple accounts sharing devices, payment instruments and addresses. Transaction-only systems miss this network context, while aggressive fraud rules create false positives and delay legitimate refunds.";
+const approvedSolution =
+  "RazorShield combines calibrated machine learning, point-in-time customer behaviour, identity-graph intelligence and transparent rules to detect coordinated abuse. It routes every return to APPROVE, VERIFY or MANUAL REVIEW with explainable evidence, measured false-positive cost and a complete audit trail.";
 
 function ErrorState({ error, retry }: { error: unknown; retry: () => void }) {
-  const detail = error instanceof ApiError ? error : new ApiError("Backend unavailable");
-  return <div className="error-state"><strong>Unable to load live risk data.</strong><span>{detail.message}</span>{detail.requestId && <code>Request ID: {detail.requestId}</code>}<button onClick={retry}>Retry</button></div>;
+  const detail =
+    error instanceof ApiError ? error : new ApiError("Backend unavailable");
+  return (
+    <div className="error-state">
+      <strong>Unable to load live risk data.</strong>
+      <span>{detail.message}</span>
+      {detail.requestId && <code>Request ID: {detail.requestId}</code>}
+      <button onClick={retry}>Retry</button>
+    </div>
+  );
 }
-function Skeleton() { return <div className="skeleton" aria-label="Loading data" />; }
-function Badge({ value }: { value: string }) { return <span className={`badge ${statusClass(value)}`}>{value.replaceAll("_", " ")}</span>; }
+function Skeleton() {
+  return <div className="skeleton" aria-label="Loading data" />;
+}
+function Badge({ value }: { value: string }) {
+  return (
+    <span className={`badge ${statusClass(value)}`}>
+      {value.replaceAll("_", " ")}
+    </span>
+  );
+}
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="app-shell"><aside><div className="brand">Razor<span>Shield</span></div><div className="workspace">PRODUCT</div><nav><Link to="/">⌂ <span>Home</span></Link></nav><div className="workspace">OPERATIONS</div><nav><Link to="/overview">▦ <span>Overview</span></Link><Link to="/cases">◫ <span>Case queue</span></Link><Link to="/rings">◎ <span>Ring explorer</span></Link></nav><div className="workspace">INTELLIGENCE</div><nav><Link to="/performance">◌ <span>Model performance</span></Link><Link to="/governance">◇ <span>Governance & safety</span></Link></nav><div className="sidebar-foot"><b>Demo workspace</b><small>Synthetic data · Analyst view</small></div></aside><main><div className="topbar"><div><span className="crumb">RAZORSHIELD / LIVE OPS</span></div><input aria-label="Search cases" placeholder="Search case reference"/><span className="status-dot">Model online</span><span className="profile">AV</span></div>{children}</main></div>;
+  const client = useQueryClient();
+  const ready = useQuery({
+    queryKey: ["shell-ready"],
+    queryFn: api.ready,
+    retry: 1,
+  });
+  const model = useQuery({
+    queryKey: ["shell-model"],
+    queryFn: api.model,
+    retry: 1,
+  });
+  const refresh = () => client.invalidateQueries();
+  const lastUpdated = new Date(
+    Math.max(ready.dataUpdatedAt, model.dataUpdatedAt),
+  ).toLocaleTimeString();
+  return (
+    <div className="app-shell">
+      <aside>
+        <div className="brand">
+          Razor<span>Shield</span>
+        </div>
+        <div className="workspace">PRODUCT</div>
+        <nav>
+          <Link to="/">
+            ⌂ <span>Home</span>
+          </Link>
+        </nav>
+        <div className="workspace">OPERATIONS</div>
+        <nav>
+          <Link to="/overview">
+            ▦ <span>Overview</span>
+          </Link>
+          <Link to="/cases">
+            ◫ <span>Case queue</span>
+          </Link>
+          <Link to="/rings">
+            ◎ <span>Ring explorer</span>
+          </Link>
+        </nav>
+        <div className="workspace">INTELLIGENCE</div>
+        <nav>
+          <Link to="/performance">
+            ◌ <span>Model performance</span>
+          </Link>
+          <Link to="/governance">
+            ◇ <span>Governance & safety</span>
+          </Link>
+        </nav>
+        <div className="sidebar-foot">
+          <b>Demo workspace</b>
+          <small>Synthetic data · Analyst view</small>
+        </div>
+      </aside>
+      <main>
+        <div className="topbar">
+          <div>
+            <span className="crumb">RAZORSHIELD / LIVE OPS</span>
+          </div>
+          <input
+            aria-label="Search cases"
+            placeholder="Search case reference"
+          />
+          <button onClick={refresh}>Refresh data</button>
+          <span
+            className={
+              ready.error || model.error ? "status-error" : "status-dot"
+            }
+          >
+            {ready.error || model.error
+              ? "Backend unavailable"
+              : `${model.data?.model_version ?? "Loading model"} · ${ready.data?.status ?? "checking"}`}
+          </span>
+          <small>Updated {lastUpdated}</small>
+          <span className="profile">AV</span>
+        </div>
+        {children}
+      </main>
+    </div>
+  );
 }
-function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) { return <article className={`metric ${tone ?? ""}`}><span>{label}</span><strong>{value}</strong></article>; }
-function CaseRows({ cases }: { cases: Case[] }) { return <div className="case-table"><div className="table-head"><span>CASE / MERCHANT</span><span>AMOUNT</span><span>RISK</span><span>SIGNAL</span><span>OUTCOME</span><span>OPENED</span></div>{cases.map(item => <Link to={`/cases/${item.case_id}`} className="table-row" key={item.case_id}><span><b>{item.return_id}</b><small>{item.merchant_id}</small></span><span>{inr(item.order_value_paise)}</span><span><i className="risk-track"><em style={{ width: `${item.final_risk * 100}%` }} /></i>{Math.round(item.final_risk * 100)}%</span><span>{item.evidence_count ? `${item.evidence_count} rule signal${item.evidence_count > 1 ? "s" : ""}` : "Network assessment"}</span><Badge value={item.decision}/><time>{date(item.opened_at)}</time></Link>)}</div>; }
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: string;
+}) {
+  return (
+    <article className={`metric ${tone ?? ""}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </article>
+  );
+}
+function CaseRows({ cases }: { cases: Case[] }) {
+  return (
+    <div className="case-table">
+      <div className="table-head">
+        <span>CASE / MERCHANT</span>
+        <span>AMOUNT</span>
+        <span>RISK</span>
+        <span>SIGNAL</span>
+        <span>OUTCOME</span>
+        <span>OPENED</span>
+      </div>
+      {cases.map((item) => (
+        <Link
+          to={`/cases/${item.case_id}`}
+          className="table-row"
+          key={item.case_id}
+        >
+          <span>
+            <b>{item.return_id}</b>
+            <small>{item.merchant_id}</small>
+          </span>
+          <span>{inr(item.order_value_paise)}</span>
+          <span>
+            <i className="risk-track">
+              <em style={{ width: `${item.final_risk * 100}%` }} />
+            </i>
+            {Math.round(item.final_risk * 100)}%
+          </span>
+          <span>
+            {item.evidence_count
+              ? `${item.evidence_count} rule signal${item.evidence_count > 1 ? "s" : ""}`
+              : "Network assessment"}
+          </span>
+          <Badge value={item.decision} />
+          <time>{date(item.opened_at)}</time>
+        </Link>
+      ))}
+    </div>
+  );
+}
 function Overview() {
-  const ready = useQuery({ queryKey: ["ready"], queryFn: api.ready, retry: 2 }); const cases = useQuery({ queryKey: ["cases"], queryFn: () => api.cases() }); const business = useQuery({ queryKey: ["business"], queryFn: api.business }); const model = useQuery({ queryKey: ["model"], queryFn: api.model });
-  const list = cases.data?.items ?? []; const counts = useMemo(() => ["APPROVE", "VERIFY", "MANUAL_REVIEW"].map(name => ({ name, value: list.filter(c => c.decision === name).length })), [list]);
-  if (ready.isLoading || cases.isLoading || business.isLoading) return <Skeleton/>; if (ready.error || cases.error || business.error) return <ErrorState error={ready.error ?? cases.error ?? business.error} retry={() => { ready.refetch(); cases.refetch(); business.refetch(); }} />; if (!ready.data || !cases.data || !business.data) return <Skeleton/>;
-  const b = business.data.business; return <><section className="page-title"><div><p>RISK COMMAND CENTER</p><h1>Returns risk, connected.</h1><span>Identify coordinated return abuse without automatic customer action.</span></div><div className="model-chip"><span className="live-dot"/> {model.data?.model_version ?? "Detector"} · {ready.data.model}</div></section><section className="metric-grid"><Metric label="Returns assessed" value={String(list.length + 6)} /><Metric label="Open cases" value={String(cases.data.total)} tone="blue"/><Metric label="Manual review" value={String(counts[2].value)} tone="coral"/><Metric label="Prevented loss" value={inr(b.estimated_prevented_loss_paise ?? 0)} tone="emerald"/><Metric label="Net savings" value={inr(b.net_estimated_savings_paise ?? 0)} tone="emerald"/><Metric label="False positives / 1k" value={(b.false_positives_per_1000_legitimate ?? 0).toFixed(1)} /></section><section className="dashboard-grid"><article className="panel trend"><div className="panel-title"><div><span>Decision distribution</span><h2>Current review posture</h2></div></div><ResponsiveContainer><PieChart><Pie data={counts} dataKey="value" innerRadius={55} outerRadius={82} paddingAngle={4}>{counts.map((_, i) => <Cell key={i} fill={["#31c48d", "#f5b942", "#fb6b62"][i]}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer><div className="legend">{counts.map(x => <span key={x.name}><i className={statusClass(x.name)}/>{x.name.replaceAll("_", " ")} <b>{x.value}</b></span>)}</div></article><article className="panel"><div className="panel-title"><div><span>Risk bands</span><h2>Priority concentration</h2></div></div><ResponsiveContainer><BarChart data={[{ name: "Low", value: list.filter(x => x.final_risk < .1).length }, { name: "Verify", value: list.filter(x => x.final_risk >= .1 && x.final_risk < .2).length }, { name: "Review", value: list.filter(x => x.final_risk >= .2).length }]}><XAxis dataKey="name"/><YAxis allowDecimals={false}/><Tooltip/><Bar dataKey="value" radius={6} fill="#4c9aff"/></BarChart></ResponsiveContainer></article></section><section className="panel priority"><div className="panel-title"><div><span>Priority cases</span><h2>Latest analyst work</h2></div><Link to="/cases">View all cases →</Link></div>{list.length ? <CaseRows cases={list.slice(0, 5)}/> : <p className="empty">The connected backend has no review cases yet.</p>}</section><p className="disclaimer">Synthetic held-out performance demonstrates the evaluation pipeline and is not a claim of production accuracy.</p></>;
+  const ready = useQuery({ queryKey: ["ready"], queryFn: api.ready, retry: 2 });
+  const cases = useQuery({ queryKey: ["cases"], queryFn: () => api.cases() });
+  const business = useQuery({ queryKey: ["business"], queryFn: api.business });
+  const model = useQuery({ queryKey: ["model"], queryFn: api.model });
+  const list = cases.data?.items ?? [];
+  const counts = useMemo(
+    () =>
+      (["APPROVE", "VERIFY", "MANUAL_REVIEW"] as const).map((name) => ({
+        name,
+        value: business.data?.live.decision_counts[name] ?? 0,
+      })),
+    [business.data],
+  );
+  if (
+    ready.isLoading ||
+    cases.isLoading ||
+    business.isLoading ||
+    model.isLoading
+  )
+    return <Skeleton />;
+  if (ready.error || cases.error || business.error || model.error)
+    return (
+      <ErrorState
+        error={ready.error ?? cases.error ?? business.error ?? model.error}
+        retry={() => {
+          ready.refetch();
+          cases.refetch();
+          business.refetch();
+          model.refetch();
+        }}
+      />
+    );
+  if (!ready.data || !cases.data || !business.data || !model.data)
+    return <Skeleton />;
+  const b = business.data.business;
+  return (
+    <>
+      <section className="page-title">
+        <div>
+          <p>RISK COMMAND CENTER</p>
+          <h1>Returns risk, connected.</h1>
+          <span>
+            Identify coordinated return abuse without automatic customer action.
+          </span>
+        </div>
+        <div className="model-chip">
+          <span className="live-dot" /> {model.data.model_version} ·{" "}
+          {ready.data.model}
+        </div>
+      </section>
+      <section className="metric-grid">
+        <Metric
+          label="Returns assessed"
+          value={String(business.data.live.assessments)}
+        />
+        <Metric
+          label="Open cases"
+          value={String(cases.data.total)}
+          tone="blue"
+        />
+        <Metric
+          label="Manual review"
+          value={String(counts[2].value)}
+          tone="coral"
+        />
+        <Metric
+          label="Prevented loss"
+          value={inr(b.estimated_prevented_loss_paise ?? 0)}
+          tone="emerald"
+        />
+        <Metric
+          label="Net savings"
+          value={inr(b.net_estimated_savings_paise ?? 0)}
+          tone="emerald"
+        />
+        <Metric
+          label="False positives / 1k"
+          value={(b.false_positives_per_1000_legitimate ?? 0).toFixed(1)}
+        />
+      </section>
+      <section className="dashboard-grid">
+        <article className="panel trend">
+          <div className="panel-title">
+            <div>
+              <span>Decision distribution</span>
+              <h2>Current review posture</h2>
+            </div>
+          </div>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={counts}
+                dataKey="value"
+                innerRadius={55}
+                outerRadius={82}
+                paddingAngle={4}
+              >
+                {counts.map((_, i) => (
+                  <Cell key={i} fill={["#31c48d", "#f5b942", "#fb6b62"][i]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="legend">
+            {counts.map((x) => (
+              <span key={x.name}>
+                <i className={statusClass(x.name)} />
+                {x.name.replaceAll("_", " ")} <b>{x.value}</b>
+              </span>
+            ))}
+          </div>
+        </article>
+        <article className="panel">
+          <div className="panel-title">
+            <div>
+              <span>Risk bands</span>
+              <h2>Priority concentration</h2>
+            </div>
+          </div>
+          <ResponsiveContainer>
+            <BarChart
+              data={[
+                {
+                  name: "Low",
+                  value: list.filter((x) => x.final_risk < 0.1).length,
+                },
+                {
+                  name: "Verify",
+                  value: list.filter(
+                    (x) => x.final_risk >= 0.1 && x.final_risk < 0.2,
+                  ).length,
+                },
+                {
+                  name: "Review",
+                  value: list.filter((x) => x.final_risk >= 0.2).length,
+                },
+              ]}
+            >
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="value" radius={6} fill="#4c9aff" />
+            </BarChart>
+          </ResponsiveContainer>
+        </article>
+      </section>
+      <section className="panel priority">
+        <div className="panel-title">
+          <div>
+            <span>Priority cases</span>
+            <h2>Latest analyst work</h2>
+          </div>
+          <Link to="/cases">View all cases →</Link>
+        </div>
+        {list.length ? (
+          <CaseRows cases={list.slice(0, 5)} />
+        ) : (
+          <p className="empty">
+            The connected backend has no review cases yet.
+          </p>
+        )}
+      </section>
+      <p className="disclaimer">
+        Synthetic held-out performance demonstrates the evaluation pipeline and
+        is not a claim of production accuracy.
+      </p>
+    </>
+  );
 }
-function Queue() { const [term, setTerm] = useState(""); const [decision, setDecision] = useState("ALL"); const [sort, setSort] = useState("RISK"); const q = useQuery({ queryKey: ["cases"], queryFn: () => api.cases() }); if (q.isLoading) return <Skeleton/>; if (q.error) return <ErrorState error={q.error} retry={q.refetch}/>; const shown = (q.data?.items ?? []).filter(x => `${x.return_id} ${x.merchant_id} ${x.decision}`.toLowerCase().includes(term.toLowerCase()) && (decision === "ALL" || x.decision === decision)).sort((a,b) => sort === "RISK" ? b.final_risk-a.final_risk : b.opened_at.localeCompare(a.opened_at)); return <><section className="page-title"><div><p>CASE MANAGEMENT</p><h1>Review queue</h1><span>Evidence-led intervention. No automatic adverse outcome.</span></div></section><section className="queue-tools"><input value={term} onChange={e => setTerm(e.target.value)} placeholder="Search merchant, case or outcome"/><select value={decision} onChange={e=>setDecision(e.target.value)}><option>ALL</option><option>VERIFY</option><option>MANUAL_REVIEW</option></select><select value={sort} onChange={e=>setSort(e.target.value)}><option value="RISK">Highest risk</option><option value="RECENT">Most recent</option></select><Badge value={`OPEN ${q.data?.total ?? 0}`}/><button onClick={() => q.refetch()}>Refresh</button></section><section className="panel">{shown.length ? <CaseRows cases={shown}/> : <p className="empty">No cases match this search. Try clearing filters.</p>}</section></> }
-function Graph({ id }: { id: string }) { const host = useRef<HTMLDivElement>(null); const q = useQuery({ queryKey: ["graph", id], queryFn: () => api.graph(id) }); useEffect(() => { const nodes = q.data?.nodes ?? []; if (!host.current || nodes.length < 2) return; const cy = cytoscape({ container: host.current, elements: { nodes: nodes.map(data => ({ data })), edges: (q.data?.edges ?? []).map(data => ({ data })) }, style: [{ selector: "node", style: { "background-color": "#4c9aff", label: "data(id)", color: "#dcecff", "font-size": 10 } }, { selector: "edge", style: { width: 2, "line-color": "#365477" } }], layout: { name: "cose" } }); return () => cy.destroy(); }, [q.data]); return <><article className="panel graph-panel"><div className="panel-title"><div><span>IDENTITY NETWORK</span><h2>Linked-identity graph</h2></div></div>{(q.data?.nodes.length ?? 0) > 1 ? <div className="graph" ref={host}/> : <p className="empty">No linked identities are safely available. Raw tokens are never displayed.</p>}</article><FeedbackTools id={id}/></>; }
-function FeedbackTools({ id }: { id: string }) { const client = useQueryClient(); const [note, setNote] = useState(""); const feedback = useMutation({ mutationFn: (disposition: string) => api.feedback(id, disposition, note), onSuccess: () => { setNote(""); client.invalidateQueries({ queryKey: ["audit", id] }); } }); const download = async () => { const payload = await api.export(id); const file = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(file); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `razorshield-evidence-${id}.json`; anchor.click(); URL.revokeObjectURL(url); }; return <div className="feedback-tools"><label>Analyst feedback <textarea value={note} onChange={event => setNote(event.target.value)} placeholder="Optional analyst note" maxLength={2000}/></label><div className="actions"><button onClick={() => feedback.mutate("CONFIRMED_ABUSE")}>Confirmed abuse</button><button onClick={() => feedback.mutate("LEGITIMATE_RETURN")}>Legitimate return</button><button onClick={() => feedback.mutate("INSUFFICIENT_EVIDENCE")}>Insufficient evidence</button><button onClick={download}>Export evidence JSON</button></div>{feedback.isSuccess && <small>Feedback recorded as future model-improvement data; no automatic retraining occurs.</small>}</div>; }
-function Detail() { const { id = "" } = useParams(); const client = useQueryClient(); const q = useQuery({ queryKey: ["case", id], queryFn: () => api.case(id) }); const audit = useQuery({ queryKey: ["audit", id], queryFn: () => api.audit(id) }); const mutation = useMutation({ mutationFn: (action: AnalystAction) => api.decision(id, action), onSuccess: () => { client.invalidateQueries({ queryKey: ["case", id] }); client.invalidateQueries({ queryKey: ["audit", id] }); }}); if (q.isLoading) return <Skeleton/>; if (q.error || !q.data) return <ErrorState error={q.error} retry={q.refetch}/>; const item = q.data; const a = item.assessment; return <><Link className="back" to="/cases">← Back to case queue</Link><section className="detail-hero"><div className="gauge" style={{ "--risk": `${a.final_risk * 360}deg` } as React.CSSProperties}><div><b>{Math.round(a.final_risk * 100)}%</b><span>final risk</span></div></div><div><p>CASE {item.return_id}</p><h1>{a.decision.replaceAll("_", " ")}</h1><Badge value={item.status}/><span className="detail-meta">{item.merchant_id} · {inr(item.order_value_paise)} · {date(item.opened_at)}</span></div><div className="notice-box"><b>Human decision required</b><span>RazorShield recommends a bounded workflow; final customer action requires analyst review.</span></div></section><section className="metric-grid three"><Metric label="ML probability" value={`${Math.round(a.ml_probability * 100)}%`}/><Metric label="Graph intelligence" value={`${Math.round(a.graph_risk * 100)}%`}/><Metric label="Rule evidence" value={`${Math.round(a.rule_risk * 100)}%`}/></section><section className="detail-grid"><article className="panel"><div className="panel-title"><div><span>DEFENSIVE EVIDENCE</span><h2>Why this case surfaced</h2></div></div>{a.evidence.rules?.length ? a.evidence.rules.map((e: Evidence) => <div className="evidence" key={e.rule_id}><b>!</b><span><strong>{e.rule_id.replaceAll("_", " ")}</strong>{e.evidence}</span></div>) : <p className="empty">No deterministic rules triggered; model and graph evidence remain recorded.</p>}<div className="actions">{actions.map(action => <button key={action} disabled={mutation.isPending} onClick={() => mutation.mutate(action)}>{action.replace("_CASE", "").replaceAll("_", " ")}</button>)}</div></article><article className="panel"><div className="panel-title"><div><span>AUDIT TRAIL</span><h2>Decision timeline</h2></div></div>{audit.data?.items.map(event => <p className="audit" key={`${event.occurred_at}-${event.event_type}`}><b>{event.event_type}</b>{date(event.occurred_at)}</p>)}</article></section><Graph id={id}/><p className="metadata">Model {a.model_version} · Policy {a.policy_version}</p></>; }
-function Performance() { const q = useQuery({ queryKey: ["model"], queryFn: api.model }); if (q.isLoading) return <Skeleton/>; if (q.error || !q.data) return <ErrorState error={q.error} retry={q.refetch}/>; const m = q.data.evaluation.test_metrics; return <><section className="page-title"><div><p>LOCKED HELD-OUT EVALUATION</p><h1>Model performance</h1><span>Synthetic evaluation only — policy selection did not use the test split.</span></div></section><section className="metric-grid six">{[["Precision",m.precision],["Recall",m.recall],["F1",m.f1],["PR-AUC",m.pr_auc],["ROC-AUC",m.roc_auc],["Brier",m.brier_score]].map(([label,value]) => <Metric key={String(label)} label={String(label)} value={`${(Number(value) * 100).toFixed(1)}%`}/>)}</section><section className="dashboard-grid"><article className="panel"><span>PREVALENCE VS PRECISION</span><h2>2.35× precision lift</h2><ResponsiveContainer><BarChart data={[{ name:"Base prevalence", value:7.83 }, { name:"Model precision", value:18.4 }]}><XAxis dataKey="name"/><YAxis/><Tooltip/><Bar dataKey="value" fill="#4c9aff" radius={6}/></BarChart></ResponsiveContainer><p>18.4% precision is approximately 2.35× the 7.83% synthetic abuse prevalence. It is not a production claim.</p></article><article className="panel"><span>LIMITATIONS</span><h2>Read before acting</h2><p>Scores are decision support for coordinated return abuse only. Synthetic patterns and calibrated probabilities can differ materially from merchant production traffic.</p><p className="disclaimer">Synthetic held-out performance demonstrates the evaluation pipeline and is not a claim of production accuracy.</p></article></section></>; }
-const featureCards = ["Identity Graph Intelligence|Find coordinated accounts through shared tokenized identities.","Point-in-Time Behaviour|Calculate customer and velocity signals using only information available at scoring time.","Calibrated Risk|Return an interpretable abuse probability rather than an unbounded AI opinion.","Cost-Sensitive Policy|Balance prevented loss, review cost and legitimate-customer friction.","Evidence-First Review|Explain ML, graph and rule signals behind every case.","Human-Gated Decisions|Never automatically reject a customer; adverse action requires analyst review.","Versioned Audit Trail|Record model, policy, evidence and analyst actions for every assessment.","Honest Evaluation|Report held-out results with a clear synthetic-data limitation."];
-function Home() { const q = useQuery({queryKey:["home-cases"],queryFn:()=>api.cases()}); const ring = q.data?.items.find(x=>x.decision === "MANUAL_REVIEW"); return <><section className="hero"><div><p>AI RISK MANAGER FOR REFUND OPERATIONS</p><h1>Detect the network behind the return.</h1><h2>{approvedSolution}</h2><div className="actions"><Link className="cta" to="/overview">Explore live risk operations</Link>{ring && <Link className="cta secondary" to={`/cases/${ring.case_id}`}>Review coordinated case</Link>}</div><small>Defense-only • Human-gated decisions • Complete audit trail</small></div><div className="network-preview"><b>Linked return network</b><div className="network-lines">● ─ ◆ ─ ●<br/>\ \ │ /<br/>◉ REVIEW</div><span>Device · payment · address</span></div></section><section className="home-section"><p>THE BUSINESS PROBLEM</p><h1>Refund abuse rarely looks suspicious one transaction at a time.</h1><div className="compare"><article><b>Approved problem</b><span>{approvedProblem}</span></article><article><b>RazorShield</b><span>Return → behavioural history → identity graph → calibrated risk → approve, verify or human review</span><small>Connects evidence while preserving human control.</small></article></div></section><section className="home-section"><p>HOW RAZORSHIELD WORKS</p><div className="steps">{[["01","Connect","Link tokenized customers, devices, payment instruments, phones, addresses and IP identities."],["02","Detect","Combine calibrated ML, temporal behaviour, graph intelligence and transparent rules."],["03","Decide safely","Route to APPROVE, VERIFY or MANUAL REVIEW based on risk and intervention cost."],["04","Audit","Preserve evidence, versions and human decisions in an append-only trail."]].map(x=><article key={x[0]}><em>{x[0]}</em><b>{x[1]}</b><span>{x[2]}</span></article>)}</div></section><section className="feature-grid">{featureCards.map(text=>{const [title,body]=text.split("|");return <article key={title}><b>{title}</b><span>{body}</span></article>})}</section><section className="results"><p>LOCKED SYNTHETIC RESULTS</p><div><Metric label="Abuse recall" value="64.3%"/><Metric label="Precision" value="18.4%"/><Metric label="Lift" value="2.35×"/><Metric label="Net estimated savings" value="₹16,656.66"/><Metric label="Automatic rejections" value="0"/></div><small>Synthetic held-out performance demonstrates the evaluation pipeline and is not a claim of production accuracy.</small></section></>; }
-function Rings() { const q=useQuery({queryKey:["rings"],queryFn:()=>api.cases()}); if(q.isLoading)return <Skeleton/>; if(q.error)return <ErrorState error={q.error} retry={q.refetch}/>; const review=q.data?.items.filter(x=>x.decision==="MANUAL_REVIEW")??[]; return <><section className="page-title"><div><p>ABUSE RING EXPLORER</p><h1>Connected review components</h1><span>Safe summaries only; raw identity tokens are never exposed.</span></div></section><section className="panel">{review.length?<CaseRows cases={review}/>:<p className="empty">No manual-review components are open in this dataset.</p>}</section></>; }
-function Governance(){return <><section className="page-title"><div><p>GOVERNANCE & SAFETY</p><h1>Built for bounded interventions.</h1></div></section><section className="feature-grid">{["Intended use|Decision support for coordinated refund and return abuse only.","Human review|No automatic customer rejection or financial penalty.","Tokenized identities|No raw card details, CVVs or sensitive credentials.","Versioning|Every assessment records model, policy and evidence versions.","Synthetic limitation|Evaluation is a pipeline demonstration, not production accuracy.","False-positive monitoring|Business cost and review capacity remain visible to analysts.","Defense-only scope|No bypass advice, customer messaging or offensive guidance."].map(text=>{const [title,body]=text.split("|");return <article key={title}><b>{title}</b><span>{body}</span></article>})}</section></>;}
-export default function App() { return <Shell><Routes><Route path="/" element={<Home/>}/><Route path="/overview" element={<Overview/>}/><Route path="/cases" element={<Queue/>}/><Route path="/cases/:id" element={<Detail/>}/><Route path="/rings" element={<Rings/>}/><Route path="/performance" element={<Performance/>}/><Route path="/governance" element={<Governance/>}/></Routes></Shell>; }
+function Queue() {
+  const [term, setTerm] = useState("");
+  const [decision, setDecision] = useState("ALL");
+  const [sort, setSort] = useState("RISK");
+  const q = useQuery({ queryKey: ["cases"], queryFn: () => api.cases() });
+  if (q.isLoading) return <Skeleton />;
+  if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
+  const shown = (q.data?.items ?? [])
+    .filter(
+      (x) =>
+        `${x.return_id} ${x.merchant_id} ${x.decision}`
+          .toLowerCase()
+          .includes(term.toLowerCase()) &&
+        (decision === "ALL" || x.decision === decision),
+    )
+    .sort((a, b) =>
+      sort === "RISK"
+        ? b.final_risk - a.final_risk
+        : b.opened_at.localeCompare(a.opened_at),
+    );
+  return (
+    <>
+      <section className="page-title">
+        <div>
+          <p>CASE MANAGEMENT</p>
+          <h1>Review queue</h1>
+          <span>Evidence-led intervention. No automatic adverse outcome.</span>
+        </div>
+      </section>
+      <section className="queue-tools">
+        <input
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+          placeholder="Search merchant, case or outcome"
+        />
+        <select value={decision} onChange={(e) => setDecision(e.target.value)}>
+          <option>ALL</option>
+          <option>VERIFY</option>
+          <option>MANUAL_REVIEW</option>
+        </select>
+        <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="RISK">Highest risk</option>
+          <option value="RECENT">Most recent</option>
+        </select>
+        <Badge value={`OPEN ${q.data?.total ?? 0}`} />
+        <button onClick={() => q.refetch()}>Refresh</button>
+      </section>
+      <section className="panel">
+        {shown.length ? (
+          <CaseRows cases={shown} />
+        ) : (
+          <p className="empty">
+            No cases match this search. Try clearing filters.
+          </p>
+        )}
+      </section>
+    </>
+  );
+}
+function Graph({ id, feedback = false }: { id: string; feedback?: boolean }) {
+  const host = useRef<HTMLDivElement>(null);
+  const q = useQuery({ queryKey: ["graph", id], queryFn: () => api.graph(id) });
+  useEffect(() => {
+    const nodes = q.data?.nodes ?? [];
+    if (!host.current || nodes.length < 2) return;
+    const cy = cytoscape({
+      container: host.current,
+      elements: {
+        nodes: nodes.map((data) => ({ data })),
+        edges: (q.data?.edges ?? []).map((data) => ({ data })),
+      },
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "#4c9aff",
+            label: "data(id)",
+            color: "#dcecff",
+            "font-size": 10,
+          },
+        },
+        { selector: "edge", style: { width: 2, "line-color": "#365477" } },
+      ],
+      layout: { name: "cose" },
+    });
+    return () => cy.destroy();
+  }, [q.data]);
+  if (q.isLoading) return <Skeleton />;
+  if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
+  return (
+    <>
+      <article className="panel graph-panel">
+        <div className="panel-title">
+          <div>
+            <span>IDENTITY NETWORK</span>
+            <h2>Linked-identity graph</h2>
+          </div>
+        </div>
+        {(q.data?.nodes.length ?? 0) > 1 ? (
+          <div className="graph" ref={host} />
+        ) : (
+          <p className="empty">
+            No linked identities are safely available. Raw tokens are never
+            displayed.
+          </p>
+        )}
+      </article>
+      {feedback && <FeedbackTools id={id} />}
+    </>
+  );
+}
+function FeedbackTools({ id }: { id: string }) {
+  const client = useQueryClient();
+  const [note, setNote] = useState("");
+  const feedback = useMutation({
+    mutationFn: (disposition: string) => api.feedback(id, disposition, note),
+    onSuccess: () => {
+      setNote("");
+      client.invalidateQueries({ queryKey: ["audit", id] });
+    },
+  });
+  const evidenceExport = useMutation({
+    mutationFn: () => api.export(id),
+    onSuccess: (payload) => {
+      const file = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(file);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `razorshield-evidence-${id}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    },
+  });
+  return (
+    <div className="feedback-tools">
+      <label>
+        Analyst feedback{" "}
+        <textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Optional analyst note"
+          maxLength={2000}
+        />
+      </label>
+      <div className="actions">
+        <button onClick={() => feedback.mutate("CONFIRMED_ABUSE")}>
+          Confirmed abuse
+        </button>
+        <button onClick={() => feedback.mutate("LEGITIMATE_RETURN")}>
+          Legitimate return
+        </button>
+        <button onClick={() => feedback.mutate("INSUFFICIENT_EVIDENCE")}>
+          Insufficient evidence
+        </button>
+        <button onClick={() => evidenceExport.mutate()}>
+          Export evidence JSON
+        </button>
+      </div>
+      {(feedback.error || evidenceExport.error) && (
+        <ErrorState
+          error={feedback.error ?? evidenceExport.error}
+          retry={() =>
+            feedback.error ? feedback.reset() : evidenceExport.mutate()
+          }
+        />
+      )}
+      {feedback.isSuccess && (
+        <small>
+          Feedback recorded as future model-improvement data; no automatic
+          retraining occurs.
+        </small>
+      )}
+    </div>
+  );
+}
+function Detail() {
+  const { id = "" } = useParams();
+  const client = useQueryClient();
+  const q = useQuery({ queryKey: ["case", id], queryFn: () => api.case(id) });
+  const audit = useQuery({
+    queryKey: ["audit", id],
+    queryFn: () => api.audit(id),
+  });
+  const mutation = useMutation({
+    mutationFn: (action: AnalystAction) => api.decision(id, action),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ["case", id] });
+      client.invalidateQueries({ queryKey: ["audit", id] });
+    },
+  });
+  if (q.isLoading) return <Skeleton />;
+  if (q.error || !q.data)
+    return <ErrorState error={q.error} retry={q.refetch} />;
+  if (audit.error)
+    return <ErrorState error={audit.error} retry={audit.refetch} />;
+  const item = q.data;
+  const a = item.assessment;
+  return (
+    <>
+      <Link className="back" to="/cases">
+        ← Back to case queue
+      </Link>
+      <section className="detail-hero">
+        <div
+          className="gauge"
+          style={
+            { "--risk": `${a.final_risk * 360}deg` } as React.CSSProperties
+          }
+        >
+          <div>
+            <b>{Math.round(a.final_risk * 100)}%</b>
+            <span>final risk</span>
+          </div>
+        </div>
+        <div>
+          <p>CASE {item.return_id}</p>
+          <h1>{a.decision.replaceAll("_", " ")}</h1>
+          <Badge value={item.status} />
+          <span className="detail-meta">
+            {item.merchant_id} · {inr(item.order_value_paise)} ·{" "}
+            {date(item.opened_at)}
+          </span>
+        </div>
+        <div className="notice-box">
+          <b>Human decision required</b>
+          <span>
+            RazorShield recommends a bounded workflow; final customer action
+            requires analyst review.
+          </span>
+        </div>
+      </section>
+      <section className="metric-grid three">
+        <Metric
+          label="ML probability"
+          value={`${Math.round(a.ml_probability * 100)}%`}
+        />
+        <Metric
+          label="Graph intelligence"
+          value={`${Math.round(a.graph_risk * 100)}%`}
+        />
+        <Metric
+          label="Rule evidence"
+          value={`${Math.round(a.rule_risk * 100)}%`}
+        />
+      </section>
+      <section className="detail-grid">
+        <article className="panel">
+          <div className="panel-title">
+            <div>
+              <span>DEFENSIVE EVIDENCE</span>
+              <h2>Why this case surfaced</h2>
+            </div>
+          </div>
+          {a.evidence.rules?.length ? (
+            a.evidence.rules.map((e: Evidence) => (
+              <div className="evidence" key={e.rule_id}>
+                <b>!</b>
+                <span>
+                  <strong>{e.rule_id.replaceAll("_", " ")}</strong>
+                  {e.evidence}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="empty">
+              No deterministic rules triggered; model and graph evidence remain
+              recorded.
+            </p>
+          )}
+          <div className="actions">
+            {actions.map((action) => (
+              <button
+                key={action}
+                disabled={mutation.isPending}
+                onClick={() => mutation.mutate(action)}
+              >
+                {action.replace("_CASE", "").replaceAll("_", " ")}
+              </button>
+            ))}
+          </div>
+        </article>
+        <article className="panel">
+          <div className="panel-title">
+            <div>
+              <span>AUDIT TRAIL</span>
+              <h2>Decision timeline</h2>
+            </div>
+          </div>
+          {audit.data?.items.map((event) => (
+            <p
+              className="audit"
+              key={`${event.occurred_at}-${event.event_type}`}
+            >
+              <b>{event.event_type}</b>
+              {date(event.occurred_at)}
+            </p>
+          ))}
+        </article>
+      </section>
+      <Graph id={id} feedback />
+      <p className="metadata">
+        Model {a.model_version} · Policy {a.policy_version}
+      </p>
+    </>
+  );
+}
+function Performance() {
+  const q = useQuery({ queryKey: ["model"], queryFn: api.model });
+  if (q.isLoading) return <Skeleton />;
+  if (q.error || !q.data)
+    return <ErrorState error={q.error} retry={q.refetch} />;
+  const m = q.data.evaluation.test_metrics;
+  return (
+    <>
+      <section className="page-title">
+        <div>
+          <p>LOCKED HELD-OUT EVALUATION</p>
+          <h1>Model performance</h1>
+          <span>
+            Synthetic evaluation only — policy selection did not use the test
+            split.
+          </span>
+        </div>
+      </section>
+      <section className="metric-grid six">
+        {[
+          ["Precision", m.precision],
+          ["Recall", m.recall],
+          ["F1", m.f1],
+          ["PR-AUC", m.pr_auc],
+          ["ROC-AUC", m.roc_auc],
+          ["Brier", m.brier_score],
+        ].map(([label, value]) => (
+          <Metric
+            key={String(label)}
+            label={String(label)}
+            value={`${(Number(value) * 100).toFixed(1)}%`}
+          />
+        ))}
+      </section>
+      <section className="dashboard-grid">
+        <article className="panel">
+          <span>PREVALENCE VS PRECISION</span>
+          <h2>2.35× precision lift</h2>
+          <ResponsiveContainer>
+            <BarChart
+              data={[
+                { name: "Base prevalence", value: 7.83 },
+                { name: "Model precision", value: 18.4 },
+              ]}
+            >
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#4c9aff" radius={6} />
+            </BarChart>
+          </ResponsiveContainer>
+          <p>
+            18.4% precision is approximately 2.35× the 7.83% synthetic abuse
+            prevalence. It is not a production claim.
+          </p>
+        </article>
+        <article className="panel">
+          <span>LIMITATIONS</span>
+          <h2>Read before acting</h2>
+          <p>
+            Scores are decision support for coordinated return abuse only.
+            Synthetic patterns and calibrated probabilities can differ
+            materially from merchant production traffic.
+          </p>
+          <p className="disclaimer">
+            Synthetic held-out performance demonstrates the evaluation pipeline
+            and is not a claim of production accuracy.
+          </p>
+          <span>CONFUSION MATRIX</span>
+          <div className="confusion-grid">
+            {m.confusion_matrix.flat().map((value, index) => (
+              <div key={index}>
+                <b>{value}</b>
+                <small>
+                  {
+                    [
+                      "True negative",
+                      "False positive",
+                      "False negative",
+                      "True positive",
+                    ][index]
+                  }
+                </small>
+              </div>
+            ))}
+          </div>
+        </article>
+      </section>
+    </>
+  );
+}
+const featureCards = [
+  "Identity Graph Intelligence|Find coordinated accounts through shared tokenized identities.",
+  "Point-in-Time Behaviour|Calculate customer and velocity signals using only information available at scoring time.",
+  "Calibrated Risk|Return an interpretable abuse probability rather than an unbounded AI opinion.",
+  "Cost-Sensitive Policy|Balance prevented loss, review cost and legitimate-customer friction.",
+  "Evidence-First Review|Explain ML, graph and rule signals behind every case.",
+  "Human-Gated Decisions|Never automatically reject a customer; adverse action requires analyst review.",
+  "Versioned Audit Trail|Record model, policy, evidence and analyst actions for every assessment.",
+  "Honest Evaluation|Report held-out results with a clear synthetic-data limitation.",
+];
+function Home() {
+  const q = useQuery({ queryKey: ["home-cases"], queryFn: () => api.cases() });
+  if (q.isLoading) return <Skeleton />;
+  if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
+  const ring = q.data?.items.find((x) => x.decision === "MANUAL_REVIEW");
+  return (
+    <>
+      <section className="hero">
+        <div>
+          <p>AI RISK MANAGER FOR REFUND OPERATIONS</p>
+          <h1>Detect the network behind the return.</h1>
+          <h2>{approvedSolution}</h2>
+          <div className="actions">
+            <Link className="cta" to="/overview">
+              Explore live risk operations
+            </Link>
+            {ring && (
+              <Link className="cta secondary" to={`/cases/${ring.case_id}`}>
+                Review coordinated case
+              </Link>
+            )}
+          </div>
+          <small>
+            Defense-only • Human-gated decisions • Complete audit trail
+          </small>
+        </div>
+        <div className="network-preview">
+          <b>Linked return network</b>
+          <div className="network-lines">
+            ● ─ ◆ ─ ●<br />\ \ │ /<br />◉ REVIEW
+          </div>
+          <span>Device · payment · address</span>
+        </div>
+      </section>
+      <section className="home-section">
+        <p>THE BUSINESS PROBLEM</p>
+        <h1>Refund abuse rarely looks suspicious one transaction at a time.</h1>
+        <div className="compare">
+          <article>
+            <b>Approved problem</b>
+            <span>{approvedProblem}</span>
+          </article>
+          <article>
+            <b>RazorShield</b>
+            <span>
+              Return → behavioural history → identity graph → calibrated risk →
+              approve, verify or human review
+            </span>
+            <small>Connects evidence while preserving human control.</small>
+          </article>
+        </div>
+      </section>
+      <section className="home-section">
+        <p>HOW RAZORSHIELD WORKS</p>
+        <div className="steps">
+          {[
+            [
+              "01",
+              "Connect",
+              "Link tokenized customers, devices, payment instruments, phones, addresses and IP identities.",
+            ],
+            [
+              "02",
+              "Detect",
+              "Combine calibrated ML, temporal behaviour, graph intelligence and transparent rules.",
+            ],
+            [
+              "03",
+              "Decide safely",
+              "Route to APPROVE, VERIFY or MANUAL REVIEW based on risk and intervention cost.",
+            ],
+            [
+              "04",
+              "Audit",
+              "Preserve evidence, versions and human decisions in an append-only trail.",
+            ],
+          ].map((x) => (
+            <article key={x[0]}>
+              <em>{x[0]}</em>
+              <b>{x[1]}</b>
+              <span>{x[2]}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="feature-grid">
+        {featureCards.map((text) => {
+          const [title, body] = text.split("|");
+          return (
+            <article key={title}>
+              <b>{title}</b>
+              <span>{body}</span>
+            </article>
+          );
+        })}
+      </section>
+      <section className="results">
+        <p>LOCKED SYNTHETIC RESULTS</p>
+        <div>
+          <Metric label="Abuse recall" value="64.3%" />
+          <Metric label="Precision" value="18.4%" />
+          <Metric label="Lift" value="2.35×" />
+          <Metric label="Net estimated savings" value="₹16,656.66" />
+          <Metric label="Automatic rejections" value="0" />
+        </div>
+        <small>
+          Synthetic held-out performance demonstrates the evaluation pipeline
+          and is not a claim of production accuracy.
+        </small>
+      </section>
+    </>
+  );
+}
+function Rings() {
+  const q = useQuery({ queryKey: ["rings"], queryFn: () => api.cases() });
+  if (q.isLoading) return <Skeleton />;
+  if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
+  const review =
+    q.data?.items.filter((x) => x.decision === "MANUAL_REVIEW") ?? [];
+  return (
+    <>
+      <section className="page-title">
+        <div>
+          <p>ABUSE RING EXPLORER</p>
+          <h1>Connected review components</h1>
+          <span>
+            Safe summaries only; raw identity tokens are never exposed.
+          </span>
+        </div>
+      </section>
+      <section className="panel">
+        {review.length ? (
+          <>
+            <CaseRows cases={review} />
+            <Graph id={review[0].case_id} />
+          </>
+        ) : (
+          <p className="empty">
+            No manual-review components are open in this dataset.
+          </p>
+        )}
+      </section>
+    </>
+  );
+}
+function Governance() {
+  return (
+    <>
+      <section className="page-title">
+        <div>
+          <p>GOVERNANCE & SAFETY</p>
+          <h1>Built for bounded interventions.</h1>
+        </div>
+      </section>
+      <section className="feature-grid">
+        {[
+          "Intended use|Decision support for coordinated refund and return abuse only.",
+          "Human review|No automatic customer rejection or financial penalty.",
+          "Tokenized identities|No raw card details, CVVs or sensitive credentials.",
+          "Versioning|Every assessment records model, policy and evidence versions.",
+          "Synthetic limitation|Evaluation is a pipeline demonstration, not production accuracy.",
+          "False-positive monitoring|Business cost and review capacity remain visible to analysts.",
+          "Defense-only scope|No bypass advice, customer messaging or offensive guidance.",
+        ].map((text) => {
+          const [title, body] = text.split("|");
+          return (
+            <article key={title}>
+              <b>{title}</b>
+              <span>{body}</span>
+            </article>
+          );
+        })}
+      </section>
+    </>
+  );
+}
+export default function App() {
+  return (
+    <Shell>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/overview" element={<Overview />} />
+        <Route path="/cases" element={<Queue />} />
+        <Route path="/cases/:id" element={<Detail />} />
+        <Route path="/rings" element={<Rings />} />
+        <Route path="/performance" element={<Performance />} />
+        <Route path="/governance" element={<Governance />} />
+      </Routes>
+    </Shell>
+  );
+}

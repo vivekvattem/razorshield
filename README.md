@@ -1,5 +1,23 @@
 # RazorShield
 
+## Reproducible local demo
+
+Use Python 3.11 and Node 20+ from the repository root:
+
+```bash
+make setup
+make bootstrap
+make backend   # terminal 1
+make frontend  # terminal 2
+make test
+```
+
+`make bootstrap` deterministically generates data, trains the artifact with the
+same pinned scikit-learn runtime, migrates the database, idempotently seeds the
+three demo outcomes, and runs a strict environment/artifact/database preflight.
+If preflight reports stale SQLite demo outcomes, preserve `backend/razorshield.db`
+as a backup and bootstrap a fresh local database.
+
 ## Approved problem statement
 
 “Merchants typically assess returns individually, allowing coordinated refund-abuse rings to hide across multiple accounts sharing devices, payment instruments and addresses. Transaction-only systems miss this network context, while aggressive fraud rules create false positives and delay legitimate refunds.”

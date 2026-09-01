@@ -10,8 +10,18 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.errors import error_payload, request_id_for
-from app.models import AnalystDecision, AuditEvent, Case, Merchant, Order, ReturnRequest, RiskAssessment
-from app.models.enums import AnalystAction, CaseStatus
+from app.models import (
+    AnalystDecision,
+    AuditEvent,
+    Case,
+    Merchant,
+    ModelVersion,
+    Order,
+    PolicyVersion,
+    ReturnRequest,
+    RiskAssessment,
+)
+from app.models.enums import AnalystAction, CaseStatus, RiskDecision
 from app.schemas.scoring import AnalystDecisionRequest, AnalystFeedbackRequest, ReturnScoreRequest
 from app.services.artifacts import ArtifactUnavailable
 from app.services.scoring import score
@@ -165,6 +175,8 @@ def get_case(case_id: str, request: Request) -> dict[str, object]:
     with request.app.state.database.transaction() as session:
         case = _get_case(session, case_id)
         assessment = session.scalar(select(RiskAssessment).where(RiskAssessment.id == case.risk_assessment_id))
+        model_version = session.scalar(select(ModelVersion).where(ModelVersion.id == assessment.model_version_id))
+        policy_version = session.scalar(select(PolicyVersion).where(PolicyVersion.id == assessment.policy_version_id))
         return {
             **_case_payload(session, case),
             "assessment": {
@@ -174,8 +186,8 @@ def get_case(case_id: str, request: Request) -> dict[str, object]:
                 "graph_risk": assessment.graph_risk,
                 "rule_risk": assessment.rule_risk,
                 "evidence": assessment.evidence_snapshot,
-                "model_version": assessment.model_version_id,
-                "policy_version": assessment.policy_version_id,
+                "model_version": model_version.version,
+                "policy_version": policy_version.version,
             },
         }
 
@@ -272,12 +284,35 @@ def case_graph(case_id: str, request: Request) -> dict[str, object]:
     with request.app.state.database.transaction() as session:
         case = _get_case(session, case_id)
         assessment = session.scalar(select(RiskAssessment).where(RiskAssessment.id == case.risk_assessment_id))
+        features = assessment.feature_snapshot
+        account_count = max(1, int(features.get("component_size", 1)))
+        identity_features = {
+            "device": "shared_device_accounts",
+            "payment": "shared_payment_accounts",
+            "address": "shared_address_accounts",
+            "phone": "shared_phone_accounts",
+            "ip": "shared_ip_accounts",
+        }
+        nodes = [{"id": "case", "type": "case"}]
+        edges: list[dict[str, str]] = []
+        for index in range(account_count):
+            account_id = f"linked-account-{index + 1}"
+            nodes.append({"id": account_id, "type": "customer"})
+            edges.append({"source": account_id, "target": "case", "type": "assessment"})
+        for identity_type, feature_name in identity_features.items():
+            if int(features.get(feature_name, 0)) <= 0:
+                continue
+            identity_id = f"masked-{identity_type}"
+            nodes.append({"id": identity_id, "type": identity_type})
+            for index in range(min(account_count, int(features[feature_name]) + 1)):
+                edges.append({"source": f"linked-account-{index + 1}", "target": identity_id, "type": identity_type})
         return {
-            "nodes": [{"id": "case", "type": "case"}],
-            "edges": [],
+            "nodes": nodes,
+            "edges": edges,
             "statistics": {
                 "degree": assessment.feature_snapshot.get("degree", 0),
-                "component_size": assessment.feature_snapshot.get("component_size", 1),
+                "component_size": account_count,
+                "identity_types": sum(1 for feature in identity_features.values() if features.get(feature, 0)),
             },
         }
 
@@ -295,9 +330,27 @@ def model_metrics(request: Request) -> dict[str, object]:
 @router.get("/api/v1/metrics/business")
 def business_metrics(request: Request) -> dict[str, object]:
     artifact = request.app.state.artifacts.load()
+    test_metrics = artifact.evaluation["test_metrics"]
+    with request.app.state.database.transaction() as session:
+        decision_counts = {
+            decision.value: session.scalar(
+                select(func.count()).select_from(RiskAssessment).where(RiskAssessment.decision == decision)
+            )
+            or 0
+            for decision in RiskDecision
+        }
     return {
         "policy_version": artifact.evaluation["policy_version"],
-        "business": artifact.evaluation.get("business", {}),
+        "business": {
+            key: test_metrics[key]
+            for key in (
+                "estimated_prevented_loss_paise",
+                "net_estimated_savings_paise",
+                "false_positive_cost_paise",
+                "false_positives_per_1000_legitimate",
+            )
+        },
+        "live": {"assessments": sum(decision_counts.values()), "decision_counts": decision_counts},
         "synthetic_only": True,
     }
 
