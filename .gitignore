@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+# JavaScript
+node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Local configuration and databases
+.env
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated data and model artifacts
+data/generated/
+artifacts/*.joblib
+artifacts/*.pkl
+artifacts/*.onnx
+
+# Tooling and operating system files
+.DS_Store
+.idea/
+.vscode/
+coverage.xml
+htmlcov/
+
