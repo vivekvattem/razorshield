@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -18,6 +19,7 @@ from app.core.errors import (
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.db.session import Database
+from app.services.artifacts import ArtifactService
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -38,12 +40,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = runtime_settings
     app.state.database = database
+    app.state.artifacts = ArtifactService(Path(__file__).resolve().parents[2] / "artifacts/generated/offline-hgb-v1")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=runtime_settings.cors_origins,
         allow_credentials=runtime_settings.cors_allow_credentials,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type", "X-Request-ID"],
+        allow_headers=["Content-Type", "Idempotency-Key", "X-Analyst-Id", "X-Request-ID"],
     )
     app.add_middleware(RequestContextMiddleware)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)

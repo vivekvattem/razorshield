@@ -17,7 +17,7 @@ def test_health_is_process_only(client, app, monkeypatch) -> None:
 def test_ready_with_database(client) -> None:
     response = client.get("/ready")
     assert response.status_code == 200
-    assert response.json() == {"status": "ready", "database": "available", "model": "not_configured"}
+    assert response.json() == {"status": "ready", "database": "available", "model": "available"}
 
 
 def test_ready_database_failure(client, app, monkeypatch) -> None:

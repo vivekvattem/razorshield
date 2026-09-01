@@ -21,6 +21,7 @@ class Database:
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
+
     def ping(self) -> None:
         with self.engine.connect() as connection:
             connection.execute(text("SELECT 1"))
