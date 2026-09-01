@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Route, Routes, useParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import cytoscape from "cytoscape";
 import {
@@ -14,6 +14,10 @@ import {
   YAxis,
 } from "recharts";
 import { AnalystAction, api, ApiError, Case, Evidence } from "./api";
+import { HeroNetworkIllustration } from "./components/illustrations/HeroNetworkIllustration";
+import { HumanReviewIllustration } from "./components/illustrations/HumanReviewIllustration";
+import { IsolatedVsConnectedIllustration } from "./components/illustrations/IsolatedVsConnectedIllustration";
+import { RiskPipelineIllustration } from "./components/illustrations/RiskPipelineIllustration";
 
 const inr = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -28,10 +32,14 @@ const actions: AnalystAction[] = [
   "DISMISS_CASE",
   "ESCALATE_CASE",
 ];
+const decisionLabel = (value: string) =>
+  ({
+    APPROVE: "Safe to Approve",
+    VERIFY: "Verification Needed",
+    MANUAL_REVIEW: "Review Required",
+  })[value] ?? value.replaceAll("_", " ");
 const approvedProblem =
   "Merchants typically assess returns individually, allowing coordinated refund-abuse rings to hide across multiple accounts sharing devices, payment instruments and addresses. Transaction-only systems miss this network context, while aggressive fraud rules create false positives and delay legitimate refunds.";
-const approvedSolution =
-  "RazorShield combines calibrated machine learning, point-in-time customer behaviour, identity-graph intelligence and transparent rules to detect coordinated abuse. It routes every return to APPROVE, VERIFY or MANUAL REVIEW with explainable evidence, measured false-positive cost and a complete audit trail.";
 
 function ErrorState({ error, retry }: { error: unknown; retry: () => void }) {
   const detail =
@@ -51,11 +59,23 @@ function Skeleton() {
 function Badge({ value }: { value: string }) {
   return (
     <span className={`badge ${statusClass(value)}`}>
-      {value.replaceAll("_", " ")}
+      {decisionLabel(value)}
     </span>
   );
 }
-function Shell({ children }: { children: React.ReactNode }) {
+function InfoTooltip({ label, copy }: { label: string; copy: string }) {
+  return (
+    <button
+      className="info-tooltip"
+      type="button"
+      aria-label={`${label}: ${copy}`}
+      data-tooltip={copy}
+    >
+      i
+    </button>
+  );
+}
+function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const client = useQueryClient();
   const ready = useQuery({
     queryKey: ["shell-ready"],
@@ -80,28 +100,28 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="workspace">PRODUCT</div>
         <nav>
           <Link to="/">
-            ⌂ <span>Home</span>
+            <span>Home</span>
           </Link>
         </nav>
         <div className="workspace">OPERATIONS</div>
         <nav>
-          <Link to="/overview">
-            ▦ <span>Overview</span>
+          <Link to="/risk-center">
+            <span>Risk Center</span>
           </Link>
           <Link to="/cases">
-            ◫ <span>Case queue</span>
+            <span>Cases</span>
           </Link>
-          <Link to="/rings">
-            ◎ <span>Ring explorer</span>
+          <Link to="/networks">
+            <span>Networks</span>
           </Link>
         </nav>
         <div className="workspace">INTELLIGENCE</div>
         <nav>
-          <Link to="/performance">
-            ◌ <span>Model performance</span>
+          <Link to="/model">
+            <span>Model &amp; Metrics</span>
           </Link>
-          <Link to="/governance">
-            ◇ <span>Governance & safety</span>
+          <Link to="/safety">
+            <span>Safety</span>
           </Link>
         </nav>
         <div className="sidebar-foot">
@@ -141,7 +161,7 @@ function Metric({
   value,
   tone,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string;
   tone?: string;
 }) {
@@ -158,10 +178,10 @@ function CaseRows({ cases }: { cases: Case[] }) {
       <div className="table-head">
         <span>CASE / MERCHANT</span>
         <span>AMOUNT</span>
-        <span>RISK</span>
-        <span>SIGNAL</span>
-        <span>OUTCOME</span>
-        <span>OPENED</span>
+        <span>FINAL SCORE</span>
+        <span>EVIDENCE</span>
+        <span>RECOMMENDED ACTION</span>
+        <span>LAST RISK CHECK</span>
       </div>
       {cases.map((item) => (
         <Link
@@ -232,7 +252,7 @@ function Overview() {
     <>
       <section className="page-title">
         <div>
-          <p>RISK COMMAND CENTER</p>
+          <p>RISK CENTER</p>
           <h1>Returns risk, connected.</h1>
           <span>
             Identify coordinated return abuse without automatic customer action.
@@ -245,40 +265,36 @@ function Overview() {
       </section>
       <section className="metric-grid">
         <Metric
-          label="Returns assessed"
+          label="Returns Checked"
           value={String(business.data.live.assessments)}
         />
         <Metric
-          label="Open cases"
+          label="Cases Needing Attention"
           value={String(cases.data.total)}
           tone="blue"
         />
         <Metric
-          label="Manual review"
+          label="Review Required"
           value={String(counts[2].value)}
           tone="coral"
         />
         <Metric
-          label="Prevented loss"
+          label="Estimated Loss Prevented"
           value={inr(b.estimated_prevented_loss_paise ?? 0)}
           tone="emerald"
         />
         <Metric
-          label="Net savings"
-          value={inr(b.net_estimated_savings_paise ?? 0)}
+          label="Model Status"
+          value={ready.data.model === "available" ? "Ready" : "Unavailable"}
           tone="emerald"
-        />
-        <Metric
-          label="False positives / 1k"
-          value={(b.false_positives_per_1000_legitimate ?? 0).toFixed(1)}
         />
       </section>
       <section className="dashboard-grid">
         <article className="panel trend">
           <div className="panel-title">
             <div>
-              <span>Decision distribution</span>
-              <h2>Current review posture</h2>
+              <span>Decisions This Batch</span>
+              <h2>Recommended next steps</h2>
             </div>
           </div>
           <div className="chart-frame">
@@ -303,7 +319,7 @@ function Overview() {
             {counts.map((x) => (
               <span key={x.name}>
                 <i className={statusClass(x.name)} />
-                {x.name.replaceAll("_", " ")} <b>{x.value}</b>
+                {decisionLabel(x.name)} <b>{x.value}</b>
               </span>
             ))}
           </div>
@@ -311,29 +327,22 @@ function Overview() {
         <article className="panel">
           <div className="panel-title">
             <div>
-              <span>Risk bands</span>
-              <h2>Priority concentration</h2>
+              <span>Risk Levels Over Time</span>
+              <h2>Recent risk checks</h2>
             </div>
           </div>
           <div className="chart-frame">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={[
-                  {
-                    name: "Low",
-                    value: list.filter((x) => x.final_risk < 0.1).length,
-                  },
-                  {
-                    name: "Verify",
-                    value: list.filter(
-                      (x) => x.final_risk >= 0.1 && x.final_risk < 0.2,
-                    ).length,
-                  },
-                  {
-                    name: "Review",
-                    value: list.filter((x) => x.final_risk >= 0.2).length,
-                  },
-                ]}
+                data={list
+                  .slice()
+                  .sort((left, right) =>
+                    left.opened_at.localeCompare(right.opened_at),
+                  )
+                  .map((item, index) => ({
+                    name: `Check ${index + 1}`,
+                    value: Math.round(item.final_risk * 100),
+                  }))}
               >
                 <XAxis dataKey="name" />
                 <YAxis allowDecimals={false} />
@@ -347,7 +356,7 @@ function Overview() {
       <section className="panel priority">
         <div className="panel-title">
           <div>
-            <span>Priority cases</span>
+            <span>Cases Needing Attention</span>
             <h2>Latest analyst work</h2>
           </div>
           <Link to="/cases">View all cases →</Link>
@@ -392,7 +401,7 @@ function Queue() {
       <section className="page-title">
         <div>
           <p>CASE MANAGEMENT</p>
-          <h1>Review queue</h1>
+          <h1>Cases</h1>
           <span>Evidence-led intervention. No automatic adverse outcome.</span>
         </div>
       </section>
@@ -400,12 +409,12 @@ function Queue() {
         <input
           value={term}
           onChange={(e) => setTerm(e.target.value)}
-          placeholder="Search merchant, case or outcome"
+          placeholder="Search merchant, case or action"
         />
         <select value={decision} onChange={(e) => setDecision(e.target.value)}>
-          <option>ALL</option>
-          <option>VERIFY</option>
-          <option>MANUAL_REVIEW</option>
+          <option value="ALL">All actions</option>
+          <option value="VERIFY">Verification Needed</option>
+          <option value="MANUAL_REVIEW">Review Required</option>
         </select>
         <select value={sort} onChange={(e) => setSort(e.target.value)}>
           <option value="RISK">Highest risk</option>
@@ -461,8 +470,8 @@ function Graph({ id, feedback = false }: { id: string; feedback?: boolean }) {
       <article className="panel graph-panel">
         <div className="panel-title">
           <div>
-            <span>IDENTITY NETWORK</span>
-            <h2>Linked-identity graph</h2>
+            <span>CONNECTIONS</span>
+            <h2>Connected Identity Map</h2>
           </div>
         </div>
         {(q.data?.nodes.length ?? 0) > 1 ? (
@@ -515,13 +524,13 @@ function FeedbackTools({ id }: { id: string }) {
       </label>
       <div className="actions">
         <button onClick={() => feedback.mutate("CONFIRMED_ABUSE")}>
-          Confirmed abuse
+          Mark Confirmed Abuse
         </button>
         <button onClick={() => feedback.mutate("LEGITIMATE_RETURN")}>
-          Legitimate return
+          Mark Legitimate
         </button>
         <button onClick={() => feedback.mutate("INSUFFICIENT_EVIDENCE")}>
-          Insufficient evidence
+          Request More Evidence
         </button>
         <button onClick={() => evidenceExport.mutate()}>
           Export evidence JSON
@@ -580,12 +589,19 @@ function Detail() {
         >
           <div>
             <b>{Math.round(a.final_risk * 100)}%</b>
-            <span>final risk</span>
+            <span>
+              Final Risk Score
+              <InfoTooltip
+                label="Final Risk Score"
+                copy="The combined result used to select the safest next step."
+              />
+            </span>
           </div>
         </div>
         <div>
           <p>CASE {item.return_id}</p>
-          <h1>{a.decision.replaceAll("_", " ")}</h1>
+          <h1>{decisionLabel(a.decision)}</h1>
+          <span className="detail-meta">Recommended Action</span>
           <Badge value={item.status} />
           <span className="detail-meta">
             {item.merchant_id} · {inr(item.order_value_paise)} ·{" "}
@@ -600,17 +616,45 @@ function Detail() {
           </span>
         </div>
       </section>
+      <section className="section-label">
+        <span>WHY</span>
+        <h2>Signals and evidence</h2>
+      </section>
       <section className="metric-grid three">
         <Metric
-          label="ML probability"
+          label={
+            <>
+              <span>Model Signal</span>
+              <InfoTooltip
+                label="Model Signal"
+                copy="Risk estimated from order and customer behaviour."
+              />
+            </>
+          }
           value={`${Math.round(a.ml_probability * 100)}%`}
         />
         <Metric
-          label="Graph intelligence"
+          label={
+            <>
+              <span>Network Signal</span>
+              <InfoTooltip
+                label="Network Signal"
+                copy="Risk created by connections between accounts and shared identities."
+              />
+            </>
+          }
           value={`${Math.round(a.graph_risk * 100)}%`}
         />
         <Metric
-          label="Rule evidence"
+          label={
+            <>
+              <span>Rule Signal</span>
+              <InfoTooltip
+                label="Rule Signal"
+                copy="Transparent warning conditions triggered by the return."
+              />
+            </>
+          }
           value={`${Math.round(a.rule_risk * 100)}%`}
         />
       </section>
@@ -618,8 +662,8 @@ function Detail() {
         <article className="panel">
           <div className="panel-title">
             <div>
-              <span>DEFENSIVE EVIDENCE</span>
-              <h2>Why this case surfaced</h2>
+              <span>WHY</span>
+              <h2>Evidence</h2>
             </div>
           </div>
           {a.evidence.rules?.length ? (
@@ -645,7 +689,11 @@ function Detail() {
                 disabled={mutation.isPending}
                 onClick={() => mutation.mutate(action)}
               >
-                {action.replace("_CASE", "").replaceAll("_", " ")}
+                {action === "APPROVE_CASE"
+                  ? "Mark Legitimate"
+                  : action === "DISMISS_CASE"
+                    ? "Request More Evidence"
+                    : "Mark Confirmed Abuse"}
               </button>
             ))}
           </div>
@@ -653,8 +701,8 @@ function Detail() {
         <article className="panel">
           <div className="panel-title">
             <div>
-              <span>AUDIT TRAIL</span>
-              <h2>Decision timeline</h2>
+              <span>HISTORY</span>
+              <h2>Activity Timeline &amp; Audit History</h2>
             </div>
           </div>
           {audit.data?.items.map((event) => (
@@ -686,7 +734,7 @@ function Performance() {
       <section className="page-title">
         <div>
           <p>LOCKED HELD-OUT EVALUATION</p>
-          <h1>Model performance</h1>
+          <h1>Model &amp; Metrics</h1>
           <span>
             Synthetic evaluation only — policy selection did not use the test
             split.
@@ -695,8 +743,8 @@ function Performance() {
       </section>
       <section className="metric-grid six">
         {[
-          ["Precision", m.precision],
-          ["Recall", m.recall],
+          ["Accuracy of Flagged Cases", m.precision],
+          ["Abuse Cases Detected", m.recall],
           ["F1", m.f1],
           ["PR-AUC", m.pr_auc],
           ["ROC-AUC", m.roc_auc],
@@ -704,21 +752,41 @@ function Performance() {
         ].map(([label, value]) => (
           <Metric
             key={String(label)}
-            label={String(label)}
+            label={
+              label === "Accuracy of Flagged Cases" ? (
+                <>
+                  <span>{label}</span>
+                  <InfoTooltip
+                    label="Accuracy of Flagged Cases"
+                    copy="Of the cases the model flags, this is the share that were abusive in the locked synthetic evaluation."
+                  />
+                </>
+              ) : label === "Abuse Cases Detected" ? (
+                <>
+                  <span>{label}</span>
+                  <InfoTooltip
+                    label="Abuse Cases Detected"
+                    copy="The share of abusive returns detected in the locked synthetic evaluation."
+                  />
+                </>
+              ) : (
+                String(label)
+              )
+            }
             value={`${(Number(value) * 100).toFixed(1)}%`}
           />
         ))}
       </section>
       <section className="dashboard-grid">
         <article className="panel">
-          <span>PREVALENCE VS PRECISION</span>
-          <h2>2.35× precision lift</h2>
+          <span>COMPARISON WITH THE BASE ABUSE RATE</span>
+          <h2>2.35× lift in flagged-case accuracy</h2>
           <div className="chart-frame">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={[
-                  { name: "Base prevalence", value: 7.83 },
-                  { name: "Model precision", value: 18.4 },
+                  { name: "Actual Abuse Rate", value: 7.83 },
+                  { name: "Accuracy of Flagged Cases", value: 18.4 },
                 ]}
               >
                 <XAxis dataKey="name" />
@@ -729,8 +797,8 @@ function Performance() {
             </ResponsiveContainer>
           </div>
           <p>
-            18.4% precision is approximately 2.35× the 7.83% synthetic abuse
-            prevalence. It is not a production claim.
+            18.4% accuracy of flagged cases is approximately 2.35× the 7.83%
+            synthetic abuse prevalence. It is not a production claim.
           </p>
         </article>
         <article className="panel">
@@ -778,225 +846,153 @@ const featureCards = [
   "Versioned Audit Trail|Record model, policy, evidence and analyst actions for every assessment.",
   "Honest Evaluation|Report held-out results with a clear synthetic-data limitation.",
 ];
-function IdentityNetworkVisual() {
+function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="network-preview">
-      <div className="network-preview-head">
-        <div>
-          <b>Identity network</b>
-          <span>Connected return signals</span>
+    <div className="public-shell">
+      <header className="public-nav">
+        <Link className="public-brand" to="/">
+          Razor<span>Shield</span>
+        </Link>
+        <nav aria-label="Product navigation">
+          <a href="#how-it-works">How it works</a>
+          <a href="#capabilities">Capabilities</a>
+          <a href="#results">Results</a>
+          <a href="#safety">Safety</a>
+        </nav>
+        <div className="public-nav-actions">
+          <Link to="/networks">View live demo</Link>
+          <Link className="public-button" to="/risk-center">
+            Open Risk Center
+          </Link>
         </div>
-        <span className="network-status">Coordinated network detected</span>
-      </div>
-      <svg
-        className="network-svg"
-        viewBox="0 0 420 300"
-        role="img"
-        aria-labelledby="network-title network-description"
-      >
-        <title id="network-title">Connected identity network</title>
-        <desc id="network-description">
-          Three customer accounts connect to shared device, payment token and
-          delivery address identities, which converge on one return case.
-        </desc>
-        <defs>
-          <marker
-            id="network-arrow"
-            markerWidth="7"
-            markerHeight="7"
-            refX="6"
-            refY="3.5"
-            orient="auto"
-          >
-            <path d="M0,0 L7,3.5 L0,7 z" fill="#5b789b" />
-          </marker>
-        </defs>
-        <g className="network-edges" markerEnd="url(#network-arrow)">
-          <line x1="68" y1="66" x2="192" y2="82" />
-          <line x1="68" y1="148" x2="192" y2="82" />
-          <line x1="68" y1="148" x2="192" y2="155" />
-          <line x1="68" y1="230" x2="192" y2="228" />
-          <line x1="228" y1="82" x2="322" y2="148" />
-          <line x1="228" y1="155" x2="322" y2="155" />
-          <line x1="228" y1="228" x2="322" y2="162" />
-        </g>
-        <g className="network-node network-customer">
-          <circle cx="68" cy="66" r="28" />
-          <text x="68" y="63" textAnchor="middle">
-            <tspan x="68" dy="0">
-              Customer
-            </tspan>
-            <tspan x="68" dy="13">
-              A
-            </tspan>
-          </text>
-        </g>
-        <g className="network-node network-customer">
-          <circle cx="68" cy="148" r="28" />
-          <text x="68" y="145" textAnchor="middle">
-            <tspan x="68" dy="0">
-              Customer
-            </tspan>
-            <tspan x="68" dy="13">
-              B
-            </tspan>
-          </text>
-        </g>
-        <g className="network-node network-customer">
-          <circle cx="68" cy="230" r="28" />
-          <text x="68" y="227" textAnchor="middle">
-            <tspan x="68" dy="0">
-              Customer
-            </tspan>
-            <tspan x="68" dy="13">
-              C
-            </tspan>
-          </text>
-        </g>
-        <g className="network-node network-identity">
-          <rect x="192" y="58" width="62" height="48" rx="10" />
-          <text x="223" y="78" textAnchor="middle">
-            <tspan x="223" dy="0">
-              Shared
-            </tspan>
-            <tspan x="223" dy="12">
-              Device
-            </tspan>
-          </text>
-          <text className="network-token" x="223" y="121" textAnchor="middle">
-            dev_token_91
-          </text>
-        </g>
-        <g className="network-node network-identity">
-          <rect x="192" y="131" width="62" height="48" rx="10" />
-          <text x="223" y="151" textAnchor="middle">
-            <tspan x="223" dy="0">
-              Payment
-            </tspan>
-            <tspan x="223" dy="12">
-              Token
-            </tspan>
-          </text>
-          <text className="network-token" x="223" y="194" textAnchor="middle">
-            pay_token_42
-          </text>
-        </g>
-        <g className="network-node network-identity">
-          <rect x="192" y="204" width="62" height="48" rx="10" />
-          <text x="223" y="224" textAnchor="middle">
-            <tspan x="223" dy="0">
-              Delivery
-            </tspan>
-            <tspan x="223" dy="12">
-              Address
-            </tspan>
-          </text>
-          <text className="network-token" x="223" y="267" textAnchor="middle">
-            addr_token_07
-          </text>
-        </g>
-        <g className="network-node network-case">
-          <circle cx="350" cy="155" r="34" />
-          <text x="350" y="151" textAnchor="middle">
-            <tspan x="350" dy="0">
-              Return
-            </tspan>
-            <tspan x="350" dy="14">
-              Case
-            </tspan>
-          </text>
-        </g>
-      </svg>
-      <div className="network-summary">
-        <strong>3 accounts, 3 shared identity types</strong>
-        <span>Shared signals converge on one investigation.</span>
-      </div>
-      <div className="network-legend" aria-label="Network legend">
-        <span>
-          <i className="network-legend-dot customer" />
-          Customer
-        </span>
-        <span>
-          <i className="network-legend-dot identity" />
-          Shared identity
-        </span>
-        <span>
-          <i className="network-legend-dot review" />
-          Review case
-        </span>
-      </div>
+      </header>
+      <main className="public-main">{children}</main>
+      <footer className="public-footer">
+        <span>RazorShield</span>
+        <span>Synthetic demo data. Defense-only product experience.</span>
+      </footer>
     </div>
+  );
+}
+function CapabilityIcon({ index }: { index: number }) {
+  return (
+    <svg className="capability-icon" viewBox="0 0 32 32" aria-hidden="true">
+      {index === 0 && (
+        <>
+          <circle cx="8" cy="16" r="4" />
+          <circle cx="24" cy="8" r="4" />
+          <circle cx="24" cy="24" r="4" />
+          <path d="M11 14l9-4M11 18l9 4" />
+        </>
+      )}
+      {index === 1 && (
+        <>
+          <path d="M5 22c5-14 10 9 22-13" />
+          <circle cx="8" cy="18" r="2" />
+          <circle cx="24" cy="9" r="2" />
+        </>
+      )}
+      {index === 2 && (
+        <>
+          <path d="M16 4l9 4v7c0 7-4 11-9 13-5-2-9-6-9-13V8z" />
+          <path d="M11 16l3 3 6-7" />
+        </>
+      )}
+      {index === 3 && (
+        <>
+          <circle cx="16" cy="16" r="10" />
+          <path d="M16 9v7l5 3" />
+        </>
+      )}
+      {index === 4 && (
+        <>
+          <circle cx="16" cy="10" r="5" />
+          <path d="M7 28c1-7 17-7 18 0M4 19h7M21 19h7" />
+        </>
+      )}
+      {index === 5 && (
+        <>
+          <path d="M9 4h11l4 4v20H9zM13 16h7M13 21h7" />
+          <path d="M13 11l2 2 4-4" />
+        </>
+      )}
+    </svg>
   );
 }
 function Home() {
   const q = useQuery({ queryKey: ["home-cases"], queryFn: () => api.cases() });
-  if (q.isLoading) return <Skeleton />;
-  if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
   const ring = q.data?.items.find((x) => x.decision === "MANUAL_REVIEW");
   return (
     <>
-      <section className="hero">
+      <section className="public-hero">
         <div>
-          <p>AI RISK MANAGER FOR REFUND OPERATIONS</p>
-          <h1>Detect the network behind the return.</h1>
-          <h2>{approvedSolution}</h2>
+          <p>REFUND RISK INTELLIGENCE</p>
+          <h1>See the network behind every suspicious return.</h1>
+          <h2>
+            RazorShield connects customer behaviour, return history and
+            tokenized identities to reveal coordinated refund abuse—without
+            automatically rejecting legitimate customers.
+          </h2>
           <div className="actions">
-            <Link className="cta" to="/overview">
-              Explore live risk operations
+            <Link className="cta" to="/risk-center">
+              Open Risk Center
             </Link>
-            {ring && (
-              <Link className="cta secondary" to={`/cases/${ring.case_id}`}>
-                Review coordinated case
-              </Link>
-            )}
+            <Link
+              className="cta secondary"
+              to={ring ? `/cases/${ring.case_id}` : "/networks"}
+            >
+              Explore a detected network
+            </Link>
           </div>
-          <small>
-            Defense-only • Human-gated decisions • Complete audit trail
-          </small>
+          <div className="trust-row">
+            <span>Explainable decisions</span>
+            <span>Human review required</span>
+            <span>Tokenized identities</span>
+            <span>Defense-only</span>
+          </div>
         </div>
-        <IdentityNetworkVisual />
+        <HeroNetworkIllustration />
       </section>
-      <section className="home-section">
+      <section className="public-section problem-section" id="problem">
         <p>THE BUSINESS PROBLEM</p>
-        <h1>Refund abuse rarely looks suspicious one transaction at a time.</h1>
-        <div className="compare">
-          <article>
-            <b>Approved problem</b>
-            <span>{approvedProblem}</span>
-          </article>
-          <article>
-            <b>RazorShield</b>
-            <span>
-              Return → behavioural history → identity graph → calibrated risk →
-              approve, verify or human review
-            </span>
-            <small>Connects evidence while preserving human control.</small>
-          </article>
+        <h1>Coordinated abuse hides in ordinary-looking returns.</h1>
+        <div className="editorial-split">
+          <div>
+            <p className="body-copy">
+              When returns are evaluated individually, shared devices, payment
+              tokens and addresses remain disconnected. RazorShield joins these
+              signals into one understandable investigation.
+            </p>
+            <p className="body-copy muted-copy">{approvedProblem}</p>
+          </div>
+          <IsolatedVsConnectedIllustration />
         </div>
       </section>
-      <section className="home-section">
+      <section className="public-section" id="how-it-works">
         <p>HOW RAZORSHIELD WORKS</p>
+        <h1>From connected activity to a bounded next step.</h1>
+        <RiskPipelineIllustration />
         <div className="steps">
           {[
             [
               "01",
-              "Connect",
-              "Link tokenized customers, devices, payment instruments, phones, addresses and IP identities.",
+              "Connect activity",
+              "Link tokenized accounts, devices, payments and addresses.",
             ],
             [
               "02",
-              "Detect",
-              "Combine calibrated ML, temporal behaviour, graph intelligence and transparent rules.",
+              "Analyse behaviour",
+              "Evaluate point-in-time order, return and velocity signals.",
             ],
             [
               "03",
-              "Decide safely",
-              "Route to APPROVE, VERIFY or MANUAL REVIEW based on risk and intervention cost.",
+              "Choose the safest action",
+              "Recommend Safe to Approve, Verification Needed or Review Required.",
             ],
             [
               "04",
-              "Audit",
-              "Preserve evidence, versions and human decisions in an append-only trail.",
+              "Preserve the evidence",
+              "Record scores, connections, policy and analyst decision.",
             ],
           ].map((x) => (
             <article key={x[0]}>
@@ -1007,22 +1003,55 @@ function Home() {
           ))}
         </div>
       </section>
-      <section className="feature-grid">
-        {featureCards.map((text) => {
-          const [title, body] = text.split("|");
-          return (
-            <article key={title}>
-              <b>{title}</b>
-              <span>{body}</span>
-            </article>
-          );
-        })}
+      <section className="public-section" id="capabilities">
+        <p>CAPABILITIES</p>
+        <h1>Built for the return operations team.</h1>
+        <div className="capability-grid">
+          {featureCards.slice(0, 6).map((text, index) => {
+            const [title, body] = text.split("|");
+            return (
+              <article key={title}>
+                <CapabilityIcon index={index} />
+                <b>{title}</b>
+                <span>{body}</span>
+              </article>
+            );
+          })}
+        </div>
       </section>
-      <section className="results">
+      <section className="public-section product-preview-section">
+        <p>PRODUCT PREVIEW</p>
+        <div className="product-preview">
+          <div>
+            <span>Illustrative interface preview</span>
+            <h2>Final Risk Score</h2>
+            <strong>82%</strong>
+            <Badge value="MANUAL_REVIEW" />
+          </div>
+          <div className="preview-signals">
+            <span>
+              Model Signal <b>61%</b>
+            </span>
+            <span>
+              Network Signal <b>94%</b>
+            </span>
+            <span>
+              Rule Signal <b>72%</b>
+            </span>
+          </div>
+          <div className="preview-connections">
+            <b>Shared Connections</b>
+            <span>dev_token_91</span>
+            <span>pay_token_42</span>
+            <span>addr_token_07</span>
+          </div>
+        </div>
+      </section>
+      <section className="results public-section" id="results">
         <p>LOCKED SYNTHETIC RESULTS</p>
         <div>
-          <Metric label="Abuse recall" value="64.3%" />
-          <Metric label="Precision" value="18.4%" />
+          <Metric label="Abuse Cases Detected" value="64.3%" />
+          <Metric label="Accuracy of Flagged Cases" value="18.4%" />
           <Metric label="Lift" value="2.35×" />
           <Metric label="Net estimated savings" value="₹16,656.66" />
           <Metric label="Automatic rejections" value="0" />
@@ -1032,10 +1061,42 @@ function Home() {
           and is not a claim of production accuracy.
         </small>
       </section>
+      <section className="public-section safety-section" id="safety">
+        <div className="editorial-split">
+          <div>
+            <p>HUMAN CONTROL AND SAFETY</p>
+            <h1>Assist the analyst. Never automatically reject.</h1>
+            <div className="safety-list">
+              <span>No automatic rejection</span>
+              <span>Human decision required</span>
+              <span>Tokenized identities</span>
+              <span>Versioned models and policies</span>
+              <span>Measured false-positive cost</span>
+              <span>Defense-only system</span>
+            </div>
+          </div>
+          <HumanReviewIllustration />
+        </div>
+      </section>
+      <section className="final-cta">
+        <p>READY TO INVESTIGATE</p>
+        <h2>Investigate the network, not just the transaction.</h2>
+        <div className="actions">
+          <Link className="cta" to="/risk-center">
+            Launch live demo
+          </Link>
+          <Link
+            className="cta secondary"
+            to={ring ? `/cases/${ring.case_id}` : "/networks"}
+          >
+            Review coordinated case
+          </Link>
+        </div>
+      </section>
     </>
   );
 }
-function Rings() {
+function Networks() {
   const q = useQuery({ queryKey: ["rings"], queryFn: () => api.cases() });
   if (q.isLoading) return <Skeleton />;
   if (q.error) return <ErrorState error={q.error} retry={q.refetch} />;
@@ -1045,8 +1106,8 @@ function Rings() {
     <>
       <section className="page-title">
         <div>
-          <p>ABUSE RING EXPLORER</p>
-          <h1>Connected review components</h1>
+          <p>NETWORKS</p>
+          <h1>Connected Networks</h1>
           <span>
             Safe summaries only; raw identity tokens are never exposed.
           </span>
@@ -1060,19 +1121,19 @@ function Rings() {
           </>
         ) : (
           <p className="empty">
-            No manual-review components are open in this dataset.
+            No connected networks currently need review in this dataset.
           </p>
         )}
       </section>
     </>
   );
 }
-function Governance() {
+function Safety() {
   return (
     <>
       <section className="page-title">
         <div>
-          <p>GOVERNANCE & SAFETY</p>
+          <p>SAFETY</p>
           <h1>Built for bounded interventions.</h1>
         </div>
       </section>
@@ -1100,16 +1161,71 @@ function Governance() {
 }
 export default function App() {
   return (
-    <Shell>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/overview" element={<Overview />} />
-        <Route path="/cases" element={<Queue />} />
-        <Route path="/cases/:id" element={<Detail />} />
-        <Route path="/rings" element={<Rings />} />
-        <Route path="/performance" element={<Performance />} />
-        <Route path="/governance" element={<Governance />} />
-      </Routes>
-    </Shell>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <PublicLayout>
+            <Home />
+          </PublicLayout>
+        }
+      />
+      <Route
+        path="/risk-center"
+        element={
+          <ApplicationLayout>
+            <Overview />
+          </ApplicationLayout>
+        }
+      />
+      <Route
+        path="/cases"
+        element={
+          <ApplicationLayout>
+            <Queue />
+          </ApplicationLayout>
+        }
+      />
+      <Route
+        path="/cases/:id"
+        element={
+          <ApplicationLayout>
+            <Detail />
+          </ApplicationLayout>
+        }
+      />
+      <Route
+        path="/networks"
+        element={
+          <ApplicationLayout>
+            <Networks />
+          </ApplicationLayout>
+        }
+      />
+      <Route
+        path="/model"
+        element={
+          <ApplicationLayout>
+            <Performance />
+          </ApplicationLayout>
+        }
+      />
+      <Route
+        path="/safety"
+        element={
+          <ApplicationLayout>
+            <Safety />
+          </ApplicationLayout>
+        }
+      />
+      <Route
+        path="/overview"
+        element={<Navigate replace to="/risk-center" />}
+      />
+      <Route path="/rings" element={<Navigate replace to="/networks" />} />
+      <Route path="/performance" element={<Navigate replace to="/model" />} />
+      <Route path="/governance" element={<Navigate replace to="/safety" />} />
+      <Route path="*" element={<Navigate replace to="/" />} />
+    </Routes>
   );
 }

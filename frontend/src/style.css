@@ -1,4 +1,11 @@
 :root {
+  --rs-bg: #07111e;
+  --rs-surface: #0c1b2c;
+  --rs-blue: #4c9aff;
+  --rs-cyan: #66d6e8;
+  --rs-amber: #f4bd55;
+  --rs-coral: #ff796f;
+  --rs-emerald: #5cdaaa;
   font-family: Inter, system-ui, sans-serif;
   color: #e7eef9;
   background: #07111e;
@@ -49,7 +56,7 @@ aside {
 .workspace {
   margin: 34px 10px 10px;
 }
-nav a {
+aside nav a {
   display: flex;
   gap: 12px;
   text-decoration: none;
@@ -59,7 +66,7 @@ nav a {
   margin: 2px 0;
   font-size: 14px;
 }
-nav a:hover {
+aside nav a:hover {
   background: #12253a;
   color: #fff;
 }
@@ -135,6 +142,56 @@ main {
   color: #fff;
   font-size: 12px;
 }
+.info-tooltip {
+  position: relative;
+  border: 1px solid #416583;
+  border-radius: 50%;
+  background: transparent;
+  color: #9ecbff;
+  cursor: help;
+  font:
+    700 9px/14px Inter,
+    sans-serif;
+  height: 15px;
+  margin-left: 5px;
+  padding: 0;
+  vertical-align: middle;
+  width: 15px;
+}
+.info-tooltip::after {
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  width: 210px;
+  padding: 9px;
+  border: 1px solid #31516f;
+  border-radius: 8px;
+  background: #10243a;
+  box-shadow: 0 10px 24px #0008;
+  color: #dcecff;
+  content: attr(data-tooltip);
+  font:
+    400 11px/1.4 Inter,
+    sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+.info-tooltip:focus-visible,
+.info-tooltip:hover {
+  border-color: var(--rs-cyan);
+  outline: none;
+}
+.info-tooltip:focus-visible::after,
+.info-tooltip:hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
 .page-title,
 .detail-hero {
   display: flex;
@@ -159,6 +216,22 @@ main {
   padding: 9px 12px;
   border-radius: 8px;
   font-size: 12px;
+}
+.section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 24px 0 10px;
+}
+.section-label span {
+  color: #7890ad;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.section-label h2 {
+  margin: 0;
+  font-size: 16px;
 }
 .metric-grid {
   display: grid;
@@ -554,13 +627,13 @@ main {
   .sidebar-foot {
     display: none;
   }
-  nav {
+  aside nav {
     display: flex;
     flex: 1 1 100%;
     flex-wrap: wrap;
     overflow: visible;
   }
-  nav a {
+  aside nav a {
     white-space: nowrap;
     padding: 7px;
   }
