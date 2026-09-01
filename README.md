@@ -1,5 +1,13 @@
 # RazorShield
 
+## Approved problem statement
+
+“Merchants typically assess returns individually, allowing coordinated refund-abuse rings to hide across multiple accounts sharing devices, payment instruments and addresses. Transaction-only systems miss this network context, while aggressive fraud rules create false positives and delay legitimate refunds.”
+
+## Approved solution statement
+
+“RazorShield combines calibrated machine learning, point-in-time customer behaviour, identity-graph intelligence and transparent rules to detect coordinated abuse. It routes every return to APPROVE, VERIFY or MANUAL REVIEW with explainable evidence, measured false-positive cost and a complete audit trail.”
+
 RazorShield is a defense-only risk-operations application for detecting coordinated
 refund and return abuse. It connects fragmented customer identities and return
 behaviour so merchants can identify suspicious networks that transaction-only
