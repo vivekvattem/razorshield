@@ -9,6 +9,10 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{8,128}$")
 logger = logging.getLogger("razorshield.request")
 

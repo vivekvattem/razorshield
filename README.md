@@ -66,6 +66,7 @@ docker compose down
 
 Copy `.env.example` to `.env` only for local overrides; do not commit it. The
 application never creates tables at startup—apply schema changes through Alembic.
+<<<<<<< HEAD
 
 ## Phase 2 synthetic data
 
@@ -80,3 +81,5 @@ make data-validate
 `data/schema.json`, `data/model-feature-allowlist.json`, and `data/manifest.json`
 record the dataset contract, prohibited model fields, seed, split boundaries, and
 checksums. The generator contains no model fitting or threshold selection.
+=======
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e

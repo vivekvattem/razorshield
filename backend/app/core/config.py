@@ -33,7 +33,11 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
+<<<<<<< HEAD
     def validate_production_safety(self) -> Settings:
+=======
+    def validate_production_safety(self) -> "Settings":
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
         if self.cors_allow_credentials and "*" in self.cors_origins:
             raise ValueError("wildcard CORS origins cannot be used with credentials")
         if self.environment == "production":

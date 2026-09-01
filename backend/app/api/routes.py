@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from fastapi import APIRouter, Query, Request
+=======
+from fastapi import APIRouter, Request
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -20,6 +24,7 @@ def root(request: Request) -> dict[str, str]:
 
 
 @router.get("/health", tags=["operational"])
+<<<<<<< HEAD
 def health(verbose: bool = Query(default=False)) -> dict[str, str]:
     """Liveness is process-only and intentionally does not contact the database."""
     response = {"status": "ok"}
@@ -29,6 +34,14 @@ def health(verbose: bool = Query(default=False)) -> dict[str, str]:
 
 
 @router.get("/ready", tags=["operational"], response_model=None)
+=======
+def health() -> dict[str, str]:
+    """Liveness is process-only and intentionally does not contact the database."""
+    return {"status": "ok"}
+
+
+@router.get("/ready", tags=["operational"])
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
 def ready(request: Request) -> dict[str, str] | JSONResponse:
     try:
         request.app.state.database.ping()

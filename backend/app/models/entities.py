@@ -5,19 +5,32 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+<<<<<<< HEAD
     JSON,
     CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
     Integer,
+=======
+    CheckConstraint,
+    DateTime,
+    Enum as SqlEnum,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
     String,
     Text,
     UniqueConstraint,
 )
+<<<<<<< HEAD
 from sqlalchemy import (
     Enum as SqlEnum,
 )
+=======
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin, utc_now
@@ -177,7 +190,13 @@ class RiskAssessment(UUIDPrimaryKeyMixin, Base):
     )
 
     assessment_id: Mapped[UUID] = mapped_column(default=uuid4, unique=True, index=True)
+<<<<<<< HEAD
     return_request_id: Mapped[UUID] = mapped_column(ForeignKey("return_requests.id", ondelete="RESTRICT"), index=True)
+=======
+    return_request_id: Mapped[UUID] = mapped_column(
+        ForeignKey("return_requests.id", ondelete="RESTRICT"), index=True
+    )
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
     model_version_id: Mapped[UUID] = mapped_column(ForeignKey("model_versions.id", ondelete="RESTRICT"))
     policy_version_id: Mapped[UUID] = mapped_column(ForeignKey("policy_versions.id", ondelete="RESTRICT"))
     request_id: Mapped[str] = mapped_column(String(128), index=True)

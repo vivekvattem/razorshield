@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+=======
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes import router
@@ -38,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = runtime_settings
     app.state.database = database
+<<<<<<< HEAD
     app.add_middleware(
         CORSMiddleware,
         allow_origins=runtime_settings.cors_origins,
@@ -45,6 +54,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "X-Request-ID"],
     )
+=======
+>>>>>>> 58e2af2715e314de060b741992c07c170726891e
     app.add_middleware(RequestContextMiddleware)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
