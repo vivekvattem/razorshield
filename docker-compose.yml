@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: razorshield
+      POSTGRES_USER: razorshield
+      POSTGRES_PASSWORD: razorshield
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U razorshield -d razorshield"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://razorshield:razorshield@postgres:5432/razorshield
+      CORS_ORIGINS: '["http://localhost:5173"]'
+      CORS_ALLOW_CREDENTIALS: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:

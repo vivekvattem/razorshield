@@ -5,6 +5,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+*.egg-info/
 
 # JavaScript
 node_modules/
@@ -29,4 +30,3 @@ artifacts/*.onnx
 .vscode/
 coverage.xml
 htmlcov/
-

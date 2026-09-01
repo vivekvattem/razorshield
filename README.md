@@ -37,3 +37,32 @@ component boundaries and data flow.
 Setup, data generation, training, test, Docker, API, demo, and metric instructions
 will be added in the phases in which those capabilities become executable. No
 commands or results are claimed before then.
+
+## Phase 1 backend setup
+
+Python 3.11 is required. From the repository root:
+
+```bash
+make setup
+make test
+make lint
+make migrate
+make run
+```
+
+The service exposes `GET /health` for process liveness and `GET /ready` for
+database readiness. The latter deliberately reports `model: not_configured` until
+the model-training phase.
+
+For PostgreSQL via Docker Compose:
+
+```bash
+docker compose up --build -d
+docker compose exec backend alembic upgrade head
+curl http://localhost:8000/health
+curl http://localhost:8000/ready
+docker compose down
+```
+
+Copy `.env.example` to `.env` only for local overrides; do not commit it. The
+application never creates tables at startup—apply schema changes through Alembic.
