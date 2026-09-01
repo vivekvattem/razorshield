@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.errors import error_payload, request_id_for
-from app.models import AnalystDecision, AuditEvent, Case, Merchant, RiskAssessment
+from app.models import AnalystDecision, AuditEvent, Case, Merchant, Order, ReturnRequest, RiskAssessment
 from app.models.enums import AnalystAction, CaseStatus
 from app.schemas.scoring import AnalystDecisionRequest, ReturnScoreRequest
 from app.services.artifacts import ArtifactUnavailable
@@ -18,12 +18,22 @@ from app.services.scoring import score
 router = APIRouter()
 
 
-def _case_payload(case: Case) -> dict[str, object]:
+def _case_payload(session, case: Case) -> dict[str, object]:
+    assessment = session.scalar(select(RiskAssessment).where(RiskAssessment.id == case.risk_assessment_id))
+    returned = session.scalar(select(ReturnRequest).where(ReturnRequest.id == assessment.return_request_id))
+    order = session.scalar(select(Order).where(Order.id == returned.order_id))
+    merchant = session.scalar(select(Merchant).where(Merchant.id == case.merchant_id))
     return {
         "case_id": str(case.case_id),
         "status": case.status.value,
         "priority": case.priority,
         "opened_at": case.opened_at.isoformat(),
+        "merchant_id": merchant.external_id,
+        "return_id": returned.external_id,
+        "order_value_paise": order.order_value_paise,
+        "final_risk": assessment.final_risk,
+        "decision": assessment.decision.value,
+        "evidence_count": len(assessment.evidence_snapshot.get("rules", [])),
     }
 
 
@@ -135,7 +145,7 @@ def list_cases(
         rows = session.scalars(
             statement.order_by(Case.priority.desc(), Case.opened_at.desc()).offset((page - 1) * size).limit(size)
         ).all()
-        return {"items": [_case_payload(row) for row in rows], "page": page, "size": size, "total": total}
+        return {"items": [_case_payload(session, row) for row in rows], "page": page, "size": size, "total": total}
 
 
 def _get_case(session, case_id: str) -> Case:
@@ -151,7 +161,7 @@ def get_case(case_id: str, request: Request) -> dict[str, object]:
         case = _get_case(session, case_id)
         assessment = session.scalar(select(RiskAssessment).where(RiskAssessment.id == case.risk_assessment_id))
         return {
-            **_case_payload(case),
+            **_case_payload(session, case),
             "assessment": {
                 "decision": assessment.decision.value,
                 "final_risk": assessment.final_risk,
@@ -194,7 +204,7 @@ def decide_case(case_id: str, payload: AnalystDecisionRequest, request: Request)
                 payload_json={"action": payload.action},
             )
         )
-        return _case_payload(case)
+        return _case_payload(session, case)
 
 
 @router.get("/api/v1/cases/{case_id}/audit")

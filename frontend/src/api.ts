@@ -1,6 +1,6 @@
 export type AnalystAction = "APPROVE_CASE" | "DISMISS_CASE" | "ESCALATE_CASE";
 export type RiskDecision = "APPROVE" | "VERIFY" | "MANUAL_REVIEW";
-export interface Case { case_id: string; status: string; priority: number; opened_at: string }
+export interface Case { case_id: string; status: string; priority: number; opened_at: string; merchant_id: string; return_id: string; order_value_paise: number; final_risk: number; decision: RiskDecision; evidence_count: number }
 export interface CaseList { items: Case[]; total: number; page: number; size: number }
 export interface Evidence { rule_id: string; evidence: string }
 export interface Assessment { decision: RiskDecision; final_risk: number; ml_probability: number; graph_risk: number; rule_risk: number; evidence: { rules?: Evidence[] }; model_version: string; policy_version: string }
