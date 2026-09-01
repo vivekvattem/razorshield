@@ -1,4 +1,4 @@
-.PHONY: setup test lint migrate migration-check run docker-up docker-down data-generate data-validate features train evaluate
+.PHONY: setup test lint migrate migration-check run docker-up docker-down data-generate data-validate features train evaluate demo-seed
 
 setup:
 	python3.11 -m venv .venv
@@ -39,3 +39,6 @@ train:
 	cd backend && ../.venv/bin/python scripts/run_offline_detector.py
 
 evaluate: train
+
+demo-seed:
+	cd backend && ../.venv/bin/python scripts/seed_demo.py

@@ -91,3 +91,10 @@ make train
 This writes versioned, checksummed model/policy/evaluation artifacts to the ignored
 `artifacts/generated/offline-hgb-v1` directory. Validation selects the hybrid policy;
 the held-out test set is evaluated only after those choices are locked.
+
+## Phase 5 demo workflow
+
+Run `make migrate` then `make demo-seed` to create the deterministic bounded demo journeys.
+`validation-policy-v1` remains the locked evaluation policy; serving uses the separately
+versioned, validation-derived capacity-guardrail policy `operational-demo-v2` and never
+uses held-out labels to choose thresholds.

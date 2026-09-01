@@ -110,6 +110,10 @@ def batch_score(
                 )
         except (ArtifactUnavailable, ValidationError, ValueError) as exc:
             results.append({"index": index, "ok": False, "error": str(exc)})
+        except Exception:
+            # Each item owns its transaction; do not let an unexpected item failure
+            # discard independent batch results or expose internals to callers.
+            results.append({"index": index, "ok": False, "error": "scoring_failed"})
     return {"request_id": request_id_for(request), "results": results}
 
 

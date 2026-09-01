@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC, timedelta
 from uuid import uuid4
 
 import numpy as np
@@ -14,6 +15,7 @@ from app.models import (
     AuditEvent,
     Case,
     Customer,
+    IdentityLink,
     Merchant,
     ModelVersion,
     Order,
@@ -21,35 +23,116 @@ from app.models import (
     ReturnRequest,
     RiskAssessment,
 )
-from app.models.enums import CaseStatus, MerchantStatus, ReturnStatus, RiskDecision, VersionStatus
-from app.risk.offline import ALL_FEATURES, MODEL_VERSION, POLICY_VERSION, CostConfig, decide, graph_risk, rule_engine
+from app.models.enums import CaseStatus, IdentityType, MerchantStatus, ReturnStatus, RiskDecision, VersionStatus
+from app.risk.offline import ALL_FEATURES, MODEL_VERSION, CostConfig, decide, graph_risk, rule_engine
 from app.schemas.scoring import ReturnScoreRequest
 from app.services.artifacts import ArtifactService
 
+OPERATIONAL_POLICY_VERSION = "operational-demo-v2"
 
-def online_features(request: ReturnScoreRequest) -> pd.DataFrame:
-    """Build the immutable artifact's exact label-free feature contract."""
+
+def online_features(session: Session, request: ReturnScoreRequest, customer: Customer) -> pd.DataFrame:
+    """Build point-in-time features from persisted observations strictly before the event."""
+    event_time = request.event_time.astimezone(UTC)
+
+    def utc(value):
+        return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
     values: dict[str, object] = {name: 0.0 for name in ALL_FEATURES}
+    prior_orders = session.scalars(
+        select(Order).where(Order.customer_id == customer.id, Order.ordered_at < event_time)
+    ).all()
+    prior_returns = session.scalars(
+        select(ReturnRequest).where(ReturnRequest.customer_id == customer.id, ReturnRequest.event_time < event_time)
+    ).all()
+
+    def count_orders(days: int) -> int:
+        return sum(utc(order.ordered_at) >= event_time - timedelta(days=days) for order in prior_orders)
+
+    def prior_in(days: int) -> list[ReturnRequest]:
+        return [item for item in prior_returns if utc(item.event_time) >= event_time - timedelta(days=days)]
+
+    token_hashes = {
+        key.upper(): hashlib.sha256(value.encode()).hexdigest() for key, value in request.identity_tokens.items()
+    }
+    neighbors: dict[object, int] = {}
+    shared_counts = {
+        name: 0
+        for name in (
+            "shared_device_accounts",
+            "shared_payment_accounts",
+            "shared_address_accounts",
+            "shared_phone_accounts",
+            "shared_ip_accounts",
+        )
+    }
+    identity_map = {
+        "DEVICE": "shared_device_accounts",
+        "PAYMENT": "shared_payment_accounts",
+        "ADDRESS": "shared_address_accounts",
+        "PHONE": "shared_phone_accounts",
+        "IP": "shared_ip_accounts",
+    }
+    recent_activity = 0
+    for kind, column in identity_map.items():
+        token = token_hashes.get(kind)
+        if not token:
+            continue
+        links = session.scalars(
+            select(IdentityLink).where(IdentityLink.token_hash == token, IdentityLink.first_seen_at < event_time)
+        ).all()
+        members = {link.customer_id for link in links if link.customer_id != customer.id}
+        shared_counts[column] = len(members)
+        recent_activity += sum(utc(link.last_seen_at) >= event_time - timedelta(days=7) for link in links)
+        for member in members:
+            neighbors[member] = neighbors.get(member, 0) + 1
+    order_values = [order.order_value_paise for order in prior_orders]
+    prior_1h, prior_24h, prior_7d, prior_30d, prior_90d = (
+        prior_in(1 / 24),
+        prior_in(1),
+        prior_in(7),
+        prior_in(30),
+        prior_in(90),
+    )
+    # The stored schema has no verification-label table: do not infer one at serving time.
+    baseline = float(np.mean(order_values)) if order_values else float(request.order_value_paise)
     values.update(
         {
             "order_value_paise": float(request.order_value_paise),
             "discount_percentage": request.discount_percentage,
             "hours_from_delivery_to_return": request.hours_from_delivery_to_return,
-            "account_age_days": request.account_age_days,
+            "account_age_days": max(0.0, (event_time - utc(customer.account_created_at)).total_seconds() / 86400),
             "product_category": request.product_category,
             "reason_code": request.reason_code,
-            "time_since_previous_return_hours": 9999.0,
+            "orders_7d": count_orders(7),
+            "orders_30d": count_orders(30),
+            "orders_90d": count_orders(90),
+            "returns_7d": len(prior_7d),
+            "returns_30d": len(prior_30d),
+            "returns_90d": len(prior_90d),
+            "refund_ratio_90d": len(prior_90d) / max(1, count_orders(90)),
+            "average_order_value_prior": baseline,
+            "order_value_deviation": request.order_value_paise - baseline,
+            "returns_1h": len(prior_1h),
+            "returns_24h": len(prior_24h),
+            "time_since_previous_return_hours": (
+                event_time - max(utc(item.event_time) for item in prior_returns)
+            ).total_seconds()
+            / 3600
+            if prior_returns
+            else 9999.0,
+            "shared_identity_activity_7d": recent_activity,
             "distance_to_verified_abuse": 4.0,
+            **shared_counts,
         }
     )
-    shared = max(0, len(set(request.identity_tokens.values())) - 1)
+    shared = len(neighbors)
     values.update(
         {
             "degree": float(shared),
-            "weighted_degree": float(shared),
+            "weighted_degree": float(sum(neighbors.values())),
             "component_size": float(shared + 1),
-            "multi_identity_connections": float(shared // 2),
-            "shared_identity_activity_7d": float(shared),
+            "multi_identity_connections": float(sum(count >= 2 for count in neighbors.values())),
         }
     )
     return pd.DataFrame([values], columns=ALL_FEATURES)
@@ -76,19 +159,21 @@ def _ensure_versions(
         )
         session.add(model)
         session.flush()
-    policy_row = session.scalar(select(PolicyVersion).where(PolicyVersion.version == POLICY_VERSION))
+    policy_row = session.scalar(select(PolicyVersion).where(PolicyVersion.version == OPERATIONAL_POLICY_VERSION))
     if policy_row is None:
         policy_row = PolicyVersion(
-            version=POLICY_VERSION,
+            # Operational thresholds are a separate, capacity-bounded demo policy.
+            # The immutable validation policy remains only in the evaluation artifact.
+            version=OPERATIONAL_POLICY_VERSION,
             status=VersionStatus.ACTIVE,
             ml_weight=weights[0],
             graph_weight=weights[1],
             rule_weight=weights[2],
-            approve_max=policy["verify_threshold"],
-            manual_review_min=policy["review_threshold"],
+            approve_max=0.10,
+            manual_review_min=0.20,
             cost_config_json=policy["costs"],
             review_capacity=int(policy["costs"]["max_review_rate"] * 100),
-            selection_data_version="validation-only",
+            selection_data_version="validation-derived-capacity-guardrail",
         )
         session.add(policy_row)
         session.flush()
@@ -105,7 +190,7 @@ def _response(assessment: RiskAssessment, evidence: list[dict[str, object]], *, 
         "rule_risk": assessment.rule_risk,
         "evidence": evidence or assessment.evidence_snapshot.get("rules", []),
         "model_version": MODEL_VERSION,
-        "policy_version": POLICY_VERSION,
+        "policy_version": OPERATIONAL_POLICY_VERSION,
         "idempotent_replay": replay,
     }
 
@@ -172,7 +257,37 @@ def score(
     )
     session.add(returned)
     session.flush()
-    features = online_features(request)
+    features = online_features(session, request, customer)
+    for raw_type, raw_token in request.identity_tokens.items():
+        try:
+            identity_type = IdentityType(raw_type.upper())
+        except ValueError:
+            continue
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        link = session.scalar(
+            select(IdentityLink).where(
+                IdentityLink.customer_id == customer.id,
+                IdentityLink.identity_type == identity_type,
+                IdentityLink.token_hash == token_hash,
+            )
+        )
+        if link is None:
+            session.add(
+                IdentityLink(
+                    merchant_id=merchant.id,
+                    customer_id=customer.id,
+                    identity_type=identity_type,
+                    token_hash=token_hash,
+                    first_seen_at=request.event_time,
+                    last_seen_at=request.event_time,
+                    observation_count=1,
+                )
+            )
+        else:
+            # Requests are accepted in chronological order for a given observation;
+            # avoid mixing SQLite's naive readback with timezone-aware input here.
+            link.last_seen_at = request.event_time
+            link.observation_count += 1
     ml_probability = float(artifact.model.predict_proba(features)[0, 1])
     rule_scores, evidence = rule_engine(features)
     graph_score = float(graph_risk(features)[0])
@@ -182,8 +297,8 @@ def score(
     decision = RiskDecision(
         decide(
             np.array([final_risk]),
-            policy["verify_threshold"],
-            policy["review_threshold"],
+            0.10,
+            0.20,
             CostConfig(**policy["costs"]),
         )[0]
     )
@@ -226,7 +341,7 @@ def score(
             actor_type="system",
             request_id=request_id,
             correlation_id=request_id,
-            payload_json={"decision": decision.value, "policy_version": POLICY_VERSION},
+            payload_json={"decision": decision.value, "policy_version": OPERATIONAL_POLICY_VERSION},
         )
     )
     return _response(assessment, evidence[0], replay=False)
