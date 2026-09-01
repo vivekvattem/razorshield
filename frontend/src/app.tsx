@@ -281,22 +281,24 @@ function Overview() {
               <h2>Current review posture</h2>
             </div>
           </div>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={counts}
-                dataKey="value"
-                innerRadius={55}
-                outerRadius={82}
-                paddingAngle={4}
-              >
-                {counts.map((_, i) => (
-                  <Cell key={i} fill={["#31c48d", "#f5b942", "#fb6b62"][i]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={counts}
+                  dataKey="value"
+                  innerRadius={55}
+                  outerRadius={82}
+                  paddingAngle={4}
+                >
+                  {counts.map((_, i) => (
+                    <Cell key={i} fill={["#31c48d", "#f5b942", "#fb6b62"][i]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
           <div className="legend">
             {counts.map((x) => (
               <span key={x.name}>
@@ -313,31 +315,33 @@ function Overview() {
               <h2>Priority concentration</h2>
             </div>
           </div>
-          <ResponsiveContainer>
-            <BarChart
-              data={[
-                {
-                  name: "Low",
-                  value: list.filter((x) => x.final_risk < 0.1).length,
-                },
-                {
-                  name: "Verify",
-                  value: list.filter(
-                    (x) => x.final_risk >= 0.1 && x.final_risk < 0.2,
-                  ).length,
-                },
-                {
-                  name: "Review",
-                  value: list.filter((x) => x.final_risk >= 0.2).length,
-                },
-              ]}
-            >
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="value" radius={6} fill="#4c9aff" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  {
+                    name: "Low",
+                    value: list.filter((x) => x.final_risk < 0.1).length,
+                  },
+                  {
+                    name: "Verify",
+                    value: list.filter(
+                      (x) => x.final_risk >= 0.1 && x.final_risk < 0.2,
+                    ).length,
+                  },
+                  {
+                    name: "Review",
+                    value: list.filter((x) => x.final_risk >= 0.2).length,
+                  },
+                ]}
+              >
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" radius={6} fill="#4c9aff" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </article>
       </section>
       <section className="panel priority">
@@ -709,19 +713,21 @@ function Performance() {
         <article className="panel">
           <span>PREVALENCE VS PRECISION</span>
           <h2>2.35× precision lift</h2>
-          <ResponsiveContainer>
-            <BarChart
-              data={[
-                { name: "Base prevalence", value: 7.83 },
-                { name: "Model precision", value: 18.4 },
-              ]}
-            >
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#4c9aff" radius={6} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="chart-frame">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={[
+                  { name: "Base prevalence", value: 7.83 },
+                  { name: "Model precision", value: 18.4 },
+                ]}
+              >
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#4c9aff" radius={6} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
           <p>
             18.4% precision is approximately 2.35× the 7.83% synthetic abuse
             prevalence. It is not a production claim.
