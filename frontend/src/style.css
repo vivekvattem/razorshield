@@ -19,7 +19,11 @@
   --rs-amber: var(--verify);
   --rs-coral: var(--review);
   --rs-emerald: var(--approve);
-  font-family: Inter, system-ui, sans-serif;
+  --font-ui: "Inter Variable", Inter, system-ui, sans-serif;
+  --font-display: "Space Grotesk Variable", "Space Grotesk", Inter, sans-serif;
+  --font-editorial: "Instrument Serif", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--font-ui);
   color: #e7eef9;
   background: var(--bg-primary);
 }
@@ -273,6 +277,13 @@ main {
 .metric strong {
   font-size: 20px;
   letter-spacing: -0.03em;
+}
+.metric small {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 400;
 }
 .metric.emerald strong {
   color: #5cdaaa;
@@ -698,6 +709,66 @@ main {
   .queue-tools {
     flex-wrap: wrap;
   }
+}
+
+/* Typography roles: UI, display, editorial emphasis and technical identifiers. */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
+}
+.brand,
+.page-title h1,
+.detail-hero h1,
+.panel h2,
+.section-label h2,
+.metric strong,
+.gauge b {
+  font-family: var(--font-display);
+}
+.page-title h1,
+.detail-hero h1 {
+  font-weight: 650;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+.metric span {
+  font-weight: 500;
+}
+.metric strong {
+  color: var(--text-primary);
+  font-feature-settings:
+    "tnum" 1,
+    "lnum" 1;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.table-row b,
+.table-row time,
+.metadata,
+.detail-meta,
+.model-chip,
+code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.table-row b {
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+}
+button,
+.cta,
+.public-button {
+  font-family: var(--font-ui);
+  font-weight: 600;
 }
 
 /* RazorShield glass surfaces: solid fallbacks remain readable without blur. */

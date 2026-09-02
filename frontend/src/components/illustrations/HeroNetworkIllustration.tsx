@@ -29,22 +29,24 @@ export function HeroNetworkIllustration() {
         <circle cx="86" cy="220" r="34" />
         <circle cx="86" cy="340" r="34" />
         <text x="86" y="96">
-          <tspan x="86">Customer</tspan>
-          <tspan x="86" dy="14">
-            A
-          </tspan>
+          A
         </text>
         <text x="86" y="216">
-          <tspan x="86">Customer</tspan>
-          <tspan x="86" dy="14">
-            B
-          </tspan>
+          B
         </text>
         <text x="86" y="336">
-          <tspan x="86">Customer</tspan>
-          <tspan x="86" dy="14">
-            C
-          </tspan>
+          C
+        </text>
+      </g>
+      <g className="hero-customer-labels">
+        <text x="86" y="154">
+          Customer A
+        </text>
+        <text x="86" y="274">
+          Customer B
+        </text>
+        <text x="86" y="394">
+          Customer C
         </text>
       </g>
       <g className="hero-identity">

@@ -168,15 +168,18 @@ function Metric({
   label,
   value,
   tone,
+  context,
 }: {
   label: React.ReactNode;
   value: string;
   tone?: string;
+  context?: string;
 }) {
   return (
     <article className={`metric ${tone ?? ""}`}>
       <span>{label}</span>
       <strong>{value}</strong>
+      {context && <small>{context}</small>}
     </article>
   );
 }
@@ -276,26 +279,31 @@ function Overview() {
           label="Returns Checked"
           value={String(business.data.live.assessments)}
           tone="blue"
+          context="Current demo batch"
         />
         <Metric
           label="Cases Needing Attention"
           value={String(cases.data.total)}
           tone="verify"
+          context="Open review work"
         />
         <Metric
           label="Review Required"
           value={String(counts[2].value)}
           tone="coral"
+          context="Human decision required"
         />
         <Metric
           label="Estimated Loss Prevented"
           value={inr(b.estimated_prevented_loss_paise ?? 0)}
           tone="emerald"
+          context="Estimated recovery"
         />
         <Metric
           label="Model Status"
           value={ready.data.model === "available" ? "Ready" : "Unavailable"}
           tone="cyan"
+          context="Artifact verified"
         />
       </section>
       <section className="dashboard-grid">
@@ -936,7 +944,11 @@ function Home() {
       <section className="public-hero">
         <div>
           <p>REFUND RISK INTELLIGENCE</p>
-          <h1>See the network behind every suspicious return.</h1>
+          <h1>
+            See the network
+            <br />
+            <em>behind every</em> suspicious return.
+          </h1>
           <h2>
             RazorShield connects customer behaviour, return history and
             tokenized identities to reveal coordinated refund abuse—without
@@ -967,7 +979,9 @@ function Home() {
       </section>
       <section className="public-section problem-section" id="problem">
         <p>THE BUSINESS PROBLEM</p>
-        <h1>Coordinated abuse hides in ordinary-looking returns.</h1>
+        <h1>
+          Coordinated abuse hides in <em>ordinary-looking returns.</em>
+        </h1>
         <div className="editorial-split">
           <div>
             <p className="body-copy">
@@ -982,7 +996,9 @@ function Home() {
       </section>
       <section className="public-section" id="how-it-works">
         <p>HOW RAZORSHIELD WORKS</p>
-        <h1>From connected activity to a bounded next step.</h1>
+        <h1>
+          From connected activity to the <em>safest action.</em>
+        </h1>
         <RiskPipelineIllustration />
         <div className="steps">
           {[
@@ -1080,7 +1096,7 @@ function Home() {
             <h1>
               Assist the analyst.
               <br />
-              Never reject automatically.
+              <em>Never reject automatically.</em>
             </h1>
             <div className="safety-list">
               <span>No automatic rejection</span>

@@ -5,36 +5,36 @@ export function HeroRiskCard() {
       aria-label="Illustrative RazorShield network risk card"
     >
       <div className="risk-card-topline">
-        <span>RazorShield</span>
-        <span>Network Risk Card</span>
+        <span>RAZORSHIELD</span>
+        <span>NETWORK RISK CARD</span>
       </div>
       <div className="risk-card-core">
         <div className="risk-card-shield" aria-hidden="true" />
         <div>
-          <span>Final Risk Score</span>
+          <span>FINAL RISK SCORE</span>
           <strong>78</strong>
         </div>
       </div>
       <div className="risk-card-action">
-        <span>Recommended action</span>
-        <b>Review Required</b>
+        <span>RECOMMENDED ACTION</span>
+        <b>REVIEW REQUIRED</b>
       </div>
       <div className="risk-card-signals">
         <span>
-          Model <b>62</b>
+          MODEL <b>62</b>
         </span>
         <span>
-          Network <b>91</b>
+          NETWORK <b>91</b>
         </span>
         <span>
-          Rules <b>74</b>
+          RULES <b>74</b>
         </span>
       </div>
       <div className="risk-card-case">
-        <span>Case</span>
+        <span>CASE</span>
         <b>RS-2026-0041</b>
       </div>
-      <footer>Human decision required</footer>
+      <footer>HUMAN DECISION REQUIRED</footer>
     </article>
   );
 }
