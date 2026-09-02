@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  NavLink,
+  Route,
+  Routes,
+  useParams,
+} from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import cytoscape from "cytoscape";
 import {
@@ -18,6 +25,7 @@ import { HeroNetworkIllustration } from "./components/illustrations/HeroNetworkI
 import { HumanReviewIllustration } from "./components/illustrations/HumanReviewIllustration";
 import { IsolatedVsConnectedIllustration } from "./components/illustrations/IsolatedVsConnectedIllustration";
 import { RiskPipelineIllustration } from "./components/illustrations/RiskPipelineIllustration";
+import { HeroRiskCard } from "./components/HeroRiskCard";
 
 const inr = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -99,30 +107,30 @@ function ApplicationLayout({ children }: { children: React.ReactNode }) {
         </div>
         <div className="workspace">PRODUCT</div>
         <nav>
-          <Link to="/">
+          <NavLink to="/">
             <span>Home</span>
-          </Link>
+          </NavLink>
         </nav>
         <div className="workspace">OPERATIONS</div>
         <nav>
-          <Link to="/risk-center">
+          <NavLink to="/risk-center">
             <span>Risk Center</span>
-          </Link>
-          <Link to="/cases">
+          </NavLink>
+          <NavLink to="/cases">
             <span>Cases</span>
-          </Link>
-          <Link to="/networks">
+          </NavLink>
+          <NavLink to="/networks">
             <span>Networks</span>
-          </Link>
+          </NavLink>
         </nav>
         <div className="workspace">INTELLIGENCE</div>
         <nav>
-          <Link to="/model">
+          <NavLink to="/model">
             <span>Model &amp; Metrics</span>
-          </Link>
-          <Link to="/safety">
+          </NavLink>
+          <NavLink to="/safety">
             <span>Safety</span>
-          </Link>
+          </NavLink>
         </nav>
         <div className="sidebar-foot">
           <b>Demo workspace</b>
@@ -267,11 +275,12 @@ function Overview() {
         <Metric
           label="Returns Checked"
           value={String(business.data.live.assessments)}
+          tone="blue"
         />
         <Metric
           label="Cases Needing Attention"
           value={String(cases.data.total)}
-          tone="blue"
+          tone="verify"
         />
         <Metric
           label="Review Required"
@@ -286,7 +295,7 @@ function Overview() {
         <Metric
           label="Model Status"
           value={ready.data.model === "available" ? "Ready" : "Unavailable"}
-          tone="emerald"
+          tone="cyan"
         />
       </section>
       <section className="dashboard-grid">
@@ -951,7 +960,10 @@ function Home() {
             <span>Defense-only</span>
           </div>
         </div>
-        <HeroNetworkIllustration />
+        <div className="hero-visual-stack">
+          <HeroNetworkIllustration />
+          <HeroRiskCard />
+        </div>
       </section>
       <section className="public-section problem-section" id="problem">
         <p>THE BUSINESS PROBLEM</p>
@@ -1065,7 +1077,11 @@ function Home() {
         <div className="editorial-split">
           <div>
             <p>HUMAN CONTROL AND SAFETY</p>
-            <h1>Assist the analyst. Never automatically reject.</h1>
+            <h1>
+              Assist the analyst.
+              <br />
+              Never reject automatically.
+            </h1>
             <div className="safety-list">
               <span>No automatic rejection</span>
               <span>Human decision required</span>

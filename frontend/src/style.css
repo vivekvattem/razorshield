@@ -1,14 +1,27 @@
 :root {
-  --rs-bg: #07111e;
-  --rs-surface: #0c1b2c;
-  --rs-blue: #4c9aff;
-  --rs-cyan: #66d6e8;
-  --rs-amber: #f4bd55;
-  --rs-coral: #ff796f;
-  --rs-emerald: #5cdaaa;
+  --bg-primary: #06111f;
+  --bg-secondary: #0a192b;
+  --glass-bg: rgba(16, 35, 58, 0.68);
+  --glass-bg-strong: rgba(14, 31, 52, 0.88);
+  --glass-border: rgba(126, 184, 255, 0.2);
+  --glass-highlight: rgba(255, 255, 255, 0.07);
+  --blue: #4da3ff;
+  --cyan: #55d6e8;
+  --approve: #35d399;
+  --verify: #f5b942;
+  --review: #ff6b73;
+  --text-primary: #f4f8ff;
+  --text-secondary: #9eb1ca;
+  --rs-bg: var(--bg-primary);
+  --rs-surface: var(--glass-bg-strong);
+  --rs-blue: var(--blue);
+  --rs-cyan: var(--cyan);
+  --rs-amber: var(--verify);
+  --rs-coral: var(--review);
+  --rs-emerald: var(--approve);
   font-family: Inter, system-ui, sans-serif;
   color: #e7eef9;
-  background: #07111e;
+  background: var(--bg-primary);
 }
 * {
   box-sizing: border-box;
@@ -16,7 +29,11 @@
 body {
   margin: 0;
   min-width: 320px;
-  background: radial-gradient(circle at 75% -20%, #13355a, #07111e 36%);
+  background:
+    radial-gradient(circle at 16% 12%, #1a4b7a80 0, transparent 28rem),
+    radial-gradient(circle at 88% 24%, #16768935 0, transparent 24rem),
+    linear-gradient(145deg, var(--bg-primary), #091827 52%, #06111f);
+  color: var(--text-primary);
 }
 #root {
   min-width: 0;
@@ -681,4 +698,121 @@ main {
   .queue-tools {
     flex-wrap: wrap;
   }
+}
+
+/* RazorShield glass surfaces: solid fallbacks remain readable without blur. */
+aside {
+  background: var(--glass-bg-strong);
+  border-right-color: var(--glass-border);
+  box-shadow: inset -1px 0 0 var(--glass-highlight);
+}
+.panel,
+.metric,
+.model-chip,
+.detail-hero,
+.feedback-tools {
+  border-color: var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 18px 44px #01091338;
+}
+@supports (
+  (-webkit-backdrop-filter: blur(16px)) or (backdrop-filter: blur(16px))
+) {
+  aside,
+  .panel:not(.priority),
+  .metric,
+  .model-chip,
+  .detail-hero,
+  .feedback-tools {
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+}
+.metric {
+  position: relative;
+  overflow: hidden;
+  min-height: 104px;
+}
+.metric::before {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--blue);
+  border-radius: 50%;
+  box-shadow: 0 0 14px #4da3ff99;
+  content: "";
+}
+.metric::after {
+  position: absolute;
+  right: 14px;
+  bottom: 0;
+  left: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--blue);
+  content: "";
+}
+.metric.verify::before {
+  border-color: var(--verify);
+  box-shadow: 0 0 14px #f5b94288;
+}
+.metric.verify::after {
+  background: var(--verify);
+}
+.metric.verify strong {
+  color: var(--verify);
+}
+.metric.coral::before {
+  border-color: var(--review);
+  box-shadow: 0 0 14px #ff6b7388;
+}
+.metric.coral::after {
+  background: var(--review);
+}
+.metric.emerald::before {
+  border-color: var(--approve);
+  box-shadow: 0 0 14px #35d39988;
+}
+.metric.emerald::after {
+  background: var(--approve);
+}
+.metric.cyan::before {
+  border-color: var(--cyan);
+  box-shadow: 0 0 14px #55d6e888;
+}
+.metric.cyan::after {
+  background: var(--cyan);
+}
+.metric.cyan strong {
+  color: var(--cyan);
+}
+.case-table {
+  overflow: hidden;
+  border: 1px solid #25425f;
+  border-radius: 12px;
+  background: #0b1a2a;
+}
+.table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #10253b;
+  box-shadow: inset 0 -1px 0 #2a4967;
+}
+.table-row:hover {
+  background: #17334d;
+}
+.topbar {
+  border-bottom-color: var(--glass-border);
+}
+aside nav a[aria-current="page"],
+aside nav a:focus-visible {
+  border-radius: 999px;
+  background: #173958;
+  color: var(--text-primary);
+  outline: 1px solid #4da3ff66;
 }
