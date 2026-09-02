@@ -983,18 +983,63 @@ function NetworkStory() {
           ))}
         </ol>
       </div>
-      <div className="hero-visual-stack">
+      <div className="network-story-visual">
         <HeroNetworkIllustration
           activeStage={visibleStage}
           sequencing={started}
         />
-        <div
-          className={`network-story-card${visibleStage >= 4 ? " is-visible" : ""}`}
-        >
-          <HeroRiskCard />
-        </div>
       </div>
     </section>
+  );
+}
+
+function HeroRiskComposition() {
+  return (
+    <div className="hero-risk-composition" aria-label="Network risk overview">
+      <div className="hero-risk-glow" aria-hidden="true" />
+      <svg
+        className="hero-compact-network"
+        viewBox="0 0 620 430"
+        aria-hidden="true"
+      >
+        <g className="compact-network-lines">
+          <path d="M84 108 C188 102 202 156 296 188" />
+          <path d="M78 212 C166 208 216 206 296 216" />
+          <path d="M88 318 C176 318 211 269 300 240" />
+          <path d="M296 188 C365 132 420 126 486 152" />
+          <path d="M296 216 C380 214 412 212 492 216" />
+          <path d="M300 240 C375 288 431 290 492 278" />
+        </g>
+        <g className="compact-network-customers">
+          <circle cx="62" cy="108" r="22" />
+          <circle cx="56" cy="212" r="22" />
+          <circle cx="66" cy="318" r="22" />
+          <text x="62" y="113">
+            A
+          </text>
+          <text x="56" y="217">
+            B
+          </text>
+          <text x="66" y="323">
+            C
+          </text>
+        </g>
+        <g className="compact-network-identities">
+          <rect x="274" y="168" width="44" height="40" rx="12" />
+          <rect x="274" y="196" width="44" height="40" rx="12" />
+          <rect x="274" y="224" width="44" height="40" rx="12" />
+        </g>
+        <g className="compact-network-case">
+          <circle cx="506" cy="216" r="47" />
+          <path d="M506 188l18 7v19c0 18-10 28-18 32-8-4-18-14-18-32v-19z" />
+        </g>
+      </svg>
+      <span className="hero-network-status">Connected network detected</span>
+      <span className="hero-network-stat">
+        3 accounts · 3 shared identities
+      </span>
+      <HeroRiskCard />
+    </div>
   );
 }
 
@@ -1004,7 +1049,7 @@ function Home() {
   return (
     <>
       <section className="public-hero">
-        <div>
+        <div className="home-hero-copy">
           <p>REFUND RISK INTELLIGENCE</p>
           <h1>
             See the network
@@ -1034,8 +1079,9 @@ function Home() {
             <span>Defense-only</span>
           </div>
         </div>
-        <NetworkStory />
+        <HeroRiskComposition />
       </section>
+      <NetworkStory />
       <section className="public-section problem-section" id="problem">
         <p>THE BUSINESS PROBLEM</p>
         <h1>

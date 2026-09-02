@@ -1867,11 +1867,155 @@ aside nav a[aria-current="page"] {
 
 /* Final Home-story geometry is deliberately last in the public-page cascade. */
 .public-main {
-  max-width: 1380px;
+  max-width: 1440px;
 }
 .public-hero {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 52px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  min-height: clamp(760px, 78vh, 850px);
+  gap: clamp(42px, 5vw, 82px);
+  padding: 88px 0 96px;
+}
+.home-hero-copy {
+  max-width: 650px;
+  animation: home-copy-enter 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.public-hero h1 {
+  max-width: 610px;
+  font-size: clamp(3.45rem, 4.7vw, 5.6rem);
+}
+.public-hero h2 {
+  max-width: 580px;
+}
+.trust-row {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 10px 18px;
+  max-width: 430px;
+}
+.trust-row span::before {
+  width: 6px;
+  height: 6px;
+  background: var(--cyan);
+  box-shadow: 0 0 8px rgba(85, 214, 232, 0.65);
+}
+.hero-risk-composition {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 510px;
+  place-items: center;
+  isolation: isolate;
+  animation: home-visual-enter 700ms 130ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-risk-glow {
+  position: absolute;
+  z-index: -3;
+  width: min(94%, 680px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(85, 214, 232, 0.23), transparent 44%),
+    radial-gradient(circle at 72% 68%, rgba(77, 163, 255, 0.2), transparent 42%);
+  filter: blur(6px);
+}
+.hero-risk-composition::before {
+  position: absolute;
+  inset: 20px;
+  z-index: -2;
+  border-radius: 30px;
+  background-image:
+    linear-gradient(rgba(125, 185, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 185, 255, 0.07) 1px, transparent 1px);
+  background-size: 34px 34px;
+  content: "";
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 75%);
+}
+.hero-compact-network {
+  position: absolute;
+  z-index: -1;
+  width: min(100%, 650px);
+  height: auto;
+  opacity: 0.82;
+  overflow: visible;
+}
+.compact-network-lines path {
+  fill: none;
+  stroke: rgba(104, 202, 255, 0.62);
+  stroke-dasharray: 180;
+  stroke-dashoffset: 180;
+  stroke-linecap: round;
+  stroke-width: 1.35;
+  animation: compact-line-draw 760ms 280ms ease-out forwards;
+}
+.compact-network-lines path:nth-child(2n) {
+  animation-delay: 360ms;
+}
+.compact-network-customers circle {
+  fill: #1a5f9f;
+  stroke: #83c5ff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 9px rgba(77, 163, 255, 0.75));
+}
+.compact-network-customers text {
+  fill: #f4f8ff;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 650;
+  text-anchor: middle;
+}
+.compact-network-identities rect {
+  fill: #6a501f;
+  stroke: #f5b942;
+  stroke-width: 1.35;
+  filter: drop-shadow(0 0 10px rgba(245, 185, 66, 0.5));
+}
+.compact-network-case circle {
+  fill: #7c3542;
+  stroke: #ff8b92;
+  stroke-width: 1.6;
+  filter: drop-shadow(0 0 15px rgba(255, 107, 115, 0.62));
+}
+.compact-network-case path {
+  fill: none;
+  stroke: #fff1f2;
+  stroke-width: 2;
+}
+.hero-risk-composition .hero-risk-card {
+  z-index: 1;
+  width: min(100%, 640px);
+  justify-self: center;
+}
+.hero-network-status,
+.hero-network-stat {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(10, 30, 51, 0.74);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 12px 30px rgba(1, 9, 19, 0.32);
+  color: #d9f7ff;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.hero-network-status {
+  top: 34px;
+  right: 8px;
+  padding: 10px 12px;
+  animation: hero-badge-enter 450ms 720ms ease-out both;
+}
+.hero-network-stat {
+  bottom: 42px;
+  left: 12px;
+  padding: 9px 11px;
+  color: var(--text-secondary);
+}
+.network-story {
+  max-width: 1380px;
+  margin: 0 auto;
   padding: 96px 0;
 }
 .network-story {
@@ -1880,11 +2024,21 @@ aside nav a[aria-current="page"] {
 .network-story-copy {
   max-width: 720px;
 }
-.hero-visual-stack {
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(28px, 4vw, 64px);
-  padding: 26px 0 0;
+.network-story-visual {
+  display: grid;
+  min-width: 0;
+  margin-top: 18px;
+  padding: clamp(20px, 3vw, 42px);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  background: var(--glass-bg);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    0 24px 54px rgba(1, 9, 19, 0.28);
+}
+.network-story-visual .hero-network-illustration {
+  width: min(100%, 940px);
+  margin: 0 auto;
 }
 .hero-network-illustration {
   width: 100%;
@@ -2032,17 +2186,15 @@ aside nav a[aria-current="page"] {
 }
 @media (max-width: 1100px) {
   .public-hero {
-    gap: 46px;
+    grid-template-columns: 1fr;
+    min-height: 0;
+    gap: 48px;
     padding: 64px 0;
   }
-  .hero-visual-stack {
-    grid-template-columns: 1fr;
-    gap: 46px;
+  .hero-risk-composition {
+    min-height: 500px;
     max-width: 760px;
     margin: 0 auto;
-  }
-  .network-story-card {
-    justify-items: center;
   }
   .hero-risk-card {
     width: min(100%, 640px);
@@ -2054,14 +2206,14 @@ aside nav a[aria-current="page"] {
     gap: 40px;
     padding: 56px 0;
   }
-  .hero-visual-stack {
-    gap: 42px;
-    padding-top: 10px;
+  .trust-row {
+    gap: 9px 14px;
+    max-width: 330px;
   }
-  .hero-network-illustration {
-    padding: 6px;
+  .hero-risk-composition {
+    min-height: 360px;
   }
-  .hero-risk-card {
+  .hero-risk-composition .hero-risk-card {
     width: 100%;
     min-height: 0;
     padding: 18px;
@@ -2077,5 +2229,64 @@ aside nav a[aria-current="page"] {
   .hero-risk-card footer {
     margin: 8px -18px -18px;
     padding: 7px 18px;
+  }
+  .hero-network-status {
+    top: 4px;
+    right: 0;
+    font-size: 9px;
+  }
+  .hero-network-stat {
+    bottom: 2px;
+    left: 0;
+    font-size: 9px;
+  }
+  .network-story {
+    padding: 72px 0;
+  }
+}
+@keyframes home-copy-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes home-visual-enter {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes compact-line-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hero-badge-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-copy,
+  .hero-risk-composition,
+  .compact-network-lines path,
+  .hero-network-status {
+    animation: none;
+  }
+  .compact-network-lines path {
+    stroke-dashoffset: 0;
   }
 }
