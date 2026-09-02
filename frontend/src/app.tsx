@@ -25,7 +25,6 @@ import { AnalystAction, api, ApiError, Case, Evidence } from "./api";
 import { HeroNetworkIllustration } from "./components/illustrations/HeroNetworkIllustration";
 import { HumanReviewIllustration } from "./components/illustrations/HumanReviewIllustration";
 import { IsolatedVsConnectedIllustration } from "./components/illustrations/IsolatedVsConnectedIllustration";
-import { RiskPipelineIllustration } from "./components/illustrations/RiskPipelineIllustration";
 import { HeroRiskCard } from "./components/HeroRiskCard";
 import { useScrollSequence } from "./hooks/useScrollSequence";
 
@@ -1089,6 +1088,42 @@ function HeroRiskComposition() {
   );
 }
 
+function WorkflowIcon({ step }: { step: string }) {
+  return (
+    <svg className="workflow-icon" viewBox="0 0 48 48" aria-hidden="true">
+      {step === "01" && (
+        <>
+          <circle cx="12" cy="24" r="5" />
+          <circle cx="35" cy="13" r="5" />
+          <circle cx="35" cy="35" r="5" />
+          <path d="M16.5 21.5 30 15.5M16.5 26.5 30 32.5" />
+        </>
+      )}
+      {step === "02" && (
+        <>
+          <path d="M24 7l12 5v10c0 11-6.5 16.5-12 19-5.5-2.5-12-8-12-19V12z" />
+          <path d="M16 25h4l3-7 4 12 2-5h4" />
+        </>
+      )}
+      {step === "03" && (
+        <>
+          <circle cx="24" cy="13" r="4" />
+          <circle cx="11" cy="35" r="4" />
+          <circle cx="24" cy="35" r="4" />
+          <circle cx="37" cy="35" r="4" />
+          <path d="M24 17v7M24 24H11M24 24v11M24 24h13" />
+        </>
+      )}
+      {step === "04" && (
+        <>
+          <path d="M14 7h15l6 6v28H14z" />
+          <path d="M29 7v7h6M19 24l3 3 6-7M19 33h11" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function Home() {
   const q = useQuery({ queryKey: ["home-cases"], queryFn: () => api.cases() });
   const ring = q.data?.items.find((x) => x.decision === "MANUAL_REVIEW");
@@ -1164,32 +1199,19 @@ function Home() {
         <h1>
           From connected activity to the <em>safest action.</em>
         </h1>
-        <RiskPipelineIllustration />
-        <div className="steps">
+        <div className="workflow-steps">
+          <div className="workflow-connector" aria-hidden="true" />
           {[
-            [
-              "01",
-              "Connect activity",
-              "Link tokenized accounts, devices, payments and addresses.",
-            ],
-            [
-              "02",
-              "Analyse behaviour",
-              "Evaluate point-in-time order, return and velocity signals.",
-            ],
-            [
-              "03",
-              "Choose the safest action",
-              "Recommend Safe to Approve, Verification Needed or Review Required.",
-            ],
-            [
-              "04",
-              "Preserve the evidence",
-              "Record scores, connections, policy and analyst decision.",
-            ],
+            ["01", "Connect", "Tokenized activity"],
+            ["02", "Analyse", "Point-in-time signals"],
+            ["03", "Route safely", "Three bounded actions"],
+            ["04", "Audit", "Versioned evidence"],
           ].map((x) => (
             <article key={x[0]}>
-              <em>{x[0]}</em>
+              <div className="workflow-card-topline">
+                <em>{x[0]}</em>
+                <WorkflowIcon step={x[0]} />
+              </div>
               <b>{x[1]}</b>
               <span>{x[2]}</span>
             </article>
