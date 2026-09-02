@@ -1,7 +1,13 @@
-export function HeroNetworkIllustration() {
+export function HeroNetworkIllustration({
+  activeStage = 4,
+  sequencing = false,
+}: {
+  activeStage?: number;
+  sequencing?: boolean;
+}) {
   return (
     <svg
-      className="illustration hero-network-illustration"
+      className={`illustration hero-network-illustration${sequencing ? " is-sequencing" : ""} story-stage-${activeStage}`}
       viewBox="0 0 640 440"
       preserveAspectRatio="xMidYMid meet"
       role="img"
@@ -13,18 +19,22 @@ export function HeroNetworkIllustration() {
           <stop offset="1" stopColor="var(--blue)" />
         </linearGradient>
       </defs>
-      <g className="illustration-links hero-links">
+      <g className="illustration-links hero-links story-customer-links">
         <path d="M120 100 C154 100 171 92 200 92" />
         <path d="M120 220 H200" />
         <path d="M120 340 C154 340 171 348 200 348" />
+      </g>
+      <g className="illustration-links hero-links story-identity-links">
         <path d="M310 92 C330 92 330 180 326 192" />
         <path d="M310 220 H324" />
         <path d="M310 348 C330 348 330 260 326 248" />
+      </g>
+      <g className="illustration-links hero-links story-assessment-links">
         <path d="M456 205 C472 170 480 142 500 124" />
         <path d="M456 220 H500" />
         <path d="M456 235 C472 270 480 298 500 316" />
       </g>
-      <g className="hero-customer">
+      <g className="hero-customer story-customers">
         <circle cx="86" cy="100" r="34" />
         <circle cx="86" cy="220" r="34" />
         <circle cx="86" cy="340" r="34" />
@@ -38,7 +48,7 @@ export function HeroNetworkIllustration() {
           C
         </text>
       </g>
-      <g className="hero-customer-labels">
+      <g className="hero-customer-labels story-customers">
         <text x="86" y="154">
           Customer A
         </text>
@@ -49,7 +59,7 @@ export function HeroNetworkIllustration() {
           Customer C
         </text>
       </g>
-      <g className="hero-identity">
+      <g className="hero-identity story-identities">
         <rect x="200" y="50" width="110" height="84" rx="18" />
         <rect x="200" y="178" width="110" height="84" rx="18" />
         <rect x="200" y="306" width="110" height="84" rx="18" />
@@ -72,7 +82,7 @@ export function HeroNetworkIllustration() {
           addr_token_07
         </text>
       </g>
-      <g className="hero-core">
+      <g className="hero-core story-assessment">
         <circle cx="390" cy="220" r="66" />
         <path d="M390 174 l26 10 v28 c0 27-16 42-26 47-10-5-26-20-26-47v-28z" />
         <path className="hero-check" d="M377 215 l9 9 18-22" />
@@ -80,7 +90,7 @@ export function HeroNetworkIllustration() {
           Risk Assessment
         </text>
       </g>
-      <g className="hero-score-card hero-score-card-one">
+      <g className="hero-score-card hero-score-card-one story-assessment">
         <rect x="500" y="70" width="112" height="92" rx="16" />
         <text x="516" y="100">
           Network Signal
@@ -89,7 +99,7 @@ export function HeroNetworkIllustration() {
           91
         </text>
       </g>
-      <g className="hero-score-card hero-score-card-two">
+      <g className="hero-score-card hero-score-card-two story-review">
         <rect x="500" y="278" width="112" height="92" rx="16" />
         <text x="516" y="308">
           Recommended Action

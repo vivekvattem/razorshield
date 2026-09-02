@@ -443,6 +443,161 @@
   }
 }
 
+/* The story stays in normal document flow; animation only reveals its content. */
+.network-story {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+}
+.network-story-copy > p {
+  margin: 0 0 7px;
+  color: var(--cyan);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+}
+.network-story-copy h2 {
+  max-width: 600px;
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+.network-story-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.network-story-progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 550;
+}
+.network-story-progress span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid rgba(126, 184, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(7, 20, 36, 0.65);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.network-story-progress li.is-active {
+  color: var(--text-primary);
+}
+.network-story-progress li.is-active span {
+  border-color: rgba(85, 214, 232, 0.65);
+  background: rgba(85, 214, 232, 0.16);
+  box-shadow: 0 0 18px rgba(85, 214, 232, 0.16);
+  color: var(--cyan);
+}
+.network-story-card {
+  min-width: 0;
+}
+.network-story.is-sequencing .story-customers,
+.network-story.is-sequencing .story-identities,
+.network-story.is-sequencing .story-assessment,
+.network-story.is-sequencing .story-review {
+  opacity: 0;
+  transform: translateY(9px) scale(0.98);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.network-story.is-sequencing .story-customer-links,
+.network-story.is-sequencing .story-identity-links,
+.network-story.is-sequencing .story-assessment-links {
+  opacity: 0;
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+  transition:
+    opacity 240ms ease,
+    stroke-dashoffset 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.network-story.is-sequencing .story-stage-1 .story-customers,
+.network-story.is-sequencing .story-stage-2 .story-customers,
+.network-story.is-sequencing .story-stage-3 .story-customers,
+.network-story.is-sequencing .story-stage-4 .story-customers,
+.network-story.is-sequencing .story-stage-2 .story-identities,
+.network-story.is-sequencing .story-stage-3 .story-identities,
+.network-story.is-sequencing .story-stage-4 .story-identities,
+.network-story.is-sequencing .story-stage-3 .story-assessment,
+.network-story.is-sequencing .story-stage-4 .story-assessment,
+.network-story.is-sequencing .story-stage-4 .story-review {
+  opacity: 1;
+  transform: none;
+}
+.network-story.is-sequencing .story-stage-2 .story-customer-links,
+.network-story.is-sequencing .story-stage-3 .story-customer-links,
+.network-story.is-sequencing .story-stage-4 .story-customer-links,
+.network-story.is-sequencing .story-stage-3 .story-identity-links,
+.network-story.is-sequencing .story-stage-4 .story-identity-links,
+.network-story.is-sequencing .story-stage-4 .story-assessment-links {
+  opacity: 1;
+  stroke-dashoffset: 0;
+}
+.network-story.is-sequencing .network-story-card {
+  opacity: 0;
+  transform: perspective(1000px) translateX(26px) rotateY(-2deg);
+  transition:
+    opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.network-story.is-sequencing .network-story-card.is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (max-width: 1100px) {
+  .network-story.is-sequencing .network-story-card {
+    transform: translateY(20px);
+  }
+}
+@media (max-width: 600px) {
+  .network-story-progress {
+    gap: 6px 9px;
+  }
+  .network-story-copy h2 {
+    font-size: 21px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .network-story *,
+  .network-story *::before,
+  .network-story *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  .network-story.is-sequencing .story-customers,
+  .network-story.is-sequencing .story-identities,
+  .network-story.is-sequencing .story-assessment,
+  .network-story.is-sequencing .story-review,
+  .network-story.is-sequencing .story-customer-links,
+  .network-story.is-sequencing .story-identity-links,
+  .network-story.is-sequencing .story-assessment-links,
+  .network-story.is-sequencing .network-story-card {
+    opacity: 1;
+    stroke-dashoffset: 0;
+    transform: none;
+  }
+}
+
 /* Public editorial hierarchy. */
 .public-nav,
 .public-nav-actions,

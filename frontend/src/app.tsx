@@ -26,6 +26,7 @@ import { HumanReviewIllustration } from "./components/illustrations/HumanReviewI
 import { IsolatedVsConnectedIllustration } from "./components/illustrations/IsolatedVsConnectedIllustration";
 import { RiskPipelineIllustration } from "./components/illustrations/RiskPipelineIllustration";
 import { HeroRiskCard } from "./components/HeroRiskCard";
+import { useScrollSequence } from "./hooks/useScrollSequence";
 
 const inr = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -936,6 +937,67 @@ function CapabilityIcon({ index }: { index: number }) {
     </svg>
   );
 }
+const networkStoryStages = [
+  { label: "Returns", heading: "Three returns appear unrelated." },
+  {
+    label: "Connections",
+    heading: "Shared identities reveal hidden connections.",
+  },
+  { label: "Risk", heading: "Network context changes the risk." },
+  {
+    label: "Review",
+    heading: "The analyst receives evidence—not an automatic rejection.",
+  },
+];
+
+function NetworkStory() {
+  const { ref, started, activeStage } = useScrollSequence(
+    networkStoryStages.length,
+  );
+  const visibleStage = activeStage || networkStoryStages.length;
+  const currentStage = networkStoryStages[visibleStage - 1];
+
+  return (
+    <section
+      ref={ref}
+      className={`network-story${started ? " is-sequencing" : ""}`}
+      aria-labelledby="network-story-heading"
+    >
+      <div className="network-story-copy">
+        <p>NETWORK STORY</p>
+        <h2 id="network-story-heading" aria-live="polite">
+          {currentStage.heading}
+        </h2>
+        <ol
+          className="network-story-progress"
+          aria-label="Network story stages"
+        >
+          {networkStoryStages.map((stage, index) => (
+            <li
+              key={stage.label}
+              className={visibleStage >= index + 1 ? "is-active" : ""}
+            >
+              <span>{index + 1}</span>
+              {stage.label}
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="hero-visual-stack">
+        <HeroNetworkIllustration
+          activeStage={visibleStage}
+          sequencing={started}
+        />
+        <div
+          className={`network-story-card${visibleStage >= 4 ? " is-visible" : ""}`}
+        >
+          <HeroRiskCard />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Home() {
   const q = useQuery({ queryKey: ["home-cases"], queryFn: () => api.cases() });
   const ring = q.data?.items.find((x) => x.decision === "MANUAL_REVIEW");
@@ -972,10 +1034,7 @@ function Home() {
             <span>Defense-only</span>
           </div>
         </div>
-        <div className="hero-visual-stack">
-          <HeroNetworkIllustration />
-          <HeroRiskCard />
-        </div>
+        <NetworkStory />
       </section>
       <section className="public-section problem-section" id="problem">
         <p>THE BUSINESS PROBLEM</p>
