@@ -287,10 +287,10 @@
 /* Hero network and risk-card geometry: bounded, aligned, and non-clipping. */
 .hero-visual-stack {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
   align-items: center;
-  gap: clamp(16px, 2.2vw, 28px);
-  padding: 18px;
+  gap: clamp(28px, 4vw, 64px);
+  padding: 26px 0 0;
 }
 .hero-network-illustration {
   width: 100%;
@@ -299,27 +299,27 @@
 }
 .hero-customer > text {
   fill: #f4f8ff;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   text-anchor: middle;
 }
 .hero-customer-labels text {
   fill: var(--text-secondary);
   font-family: var(--font-ui);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   text-anchor: middle;
 }
 .hero-identity > text:not(.illustration-token) {
   fill: #f4f8ff;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 650;
   text-anchor: middle;
 }
 .hero-identity .illustration-token {
   fill: #cad9e8;
   font-family: var(--font-mono);
-  font-size: 7.6px;
+  font-size: 9px;
   font-weight: 400;
   letter-spacing: 0.01em;
   text-anchor: middle;
@@ -327,7 +327,7 @@
 .hero-core > text {
   fill: #dff7ff;
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   text-anchor: middle;
 }
@@ -336,24 +336,26 @@
   text-anchor: start;
 }
 .hero-score-card .hero-action {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
 }
 .hero-risk-card {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr auto;
   align-self: stretch;
-  width: 100%;
-  max-width: 560px;
+  width: clamp(520px, 100%, 640px);
+  max-width: 100%;
   min-width: 0;
-  aspect-ratio: 1 / 1.12;
+  aspect-ratio: 85.6 / 53.98;
   justify-self: stretch;
   overflow: hidden;
-  padding: clamp(16px, 2vw, 22px);
-  transform: none;
+  padding: clamp(22px, 2.5vw, 36px);
+  border-radius: 28px;
+  transform: perspective(1100px) rotateY(-1.4deg) rotateX(0.8deg);
 }
 .hero-risk-card:hover {
-  transform: perspective(1000px) rotateX(1deg) rotateY(-1.5deg);
+  transform: perspective(1100px) rotateY(-2.6deg) rotateX(1.5deg)
+    translateY(-2px);
 }
 .risk-card-topline {
   font-family: var(--font-ui);
@@ -406,9 +408,9 @@
   letter-spacing: 0.045em;
 }
 .hero-risk-card footer {
-  margin: 13px calc(clamp(16px, 2vw, 22px) * -1)
-    calc(clamp(16px, 2vw, 22px) * -1);
-  padding: 9px clamp(16px, 2vw, 22px);
+  margin: 13px calc(clamp(22px, 2.5vw, 36px) * -1)
+    calc(clamp(22px, 2.5vw, 36px) * -1);
+  padding: 9px clamp(22px, 2.5vw, 36px);
   font-family: var(--font-ui);
   font-size: 8px;
   font-weight: 700;
@@ -418,28 +420,323 @@
 @media (max-width: 1100px) {
   .hero-visual-stack {
     grid-template-columns: 1fr;
-    max-width: 620px;
+    gap: 46px;
+    max-width: 760px;
     margin: 0 auto;
   }
   .hero-risk-card {
-    width: 100%;
-    max-width: none;
-    aspect-ratio: 1.8 / 1;
+    width: min(100%, 640px);
+    aspect-ratio: 85.6 / 53.98;
   }
 }
 @media (max-width: 600px) {
   .hero-visual-stack {
-    padding: 8px 0;
+    gap: 42px;
+    padding: 10px 0 0;
   }
   .hero-risk-card {
-    aspect-ratio: auto;
-    min-height: 286px;
+    width: 100%;
+    aspect-ratio: 85.6 / 53.98;
+    min-height: 0;
+    padding: 18px;
   }
   .hero-risk-card:hover {
     transform: none;
   }
   .hero-risk-card footer {
     margin-top: 15px;
+  }
+}
+
+/* Landscape risk-card composition for the full-width network story. */
+.public-main {
+  max-width: 1380px;
+}
+.public-hero {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 52px;
+  padding: 96px 0;
+}
+.network-story {
+  gap: 20px;
+}
+.network-story-copy {
+  max-width: 720px;
+}
+.hero-visual-stack {
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(28px, 4vw, 64px);
+  padding: 26px 0 0;
+}
+.hero-network-illustration {
+  width: 100%;
+  max-width: none;
+  padding: 14px;
+}
+.hero-customer > text {
+  font-size: 22px;
+}
+.hero-customer-labels text {
+  font-size: 11px;
+}
+.hero-identity > text:not(.illustration-token) {
+  font-size: 13px;
+}
+.hero-identity .illustration-token {
+  font-size: 9px;
+}
+.hero-core > text {
+  font-size: 12px;
+}
+.hero-score-card text {
+  font-size: 11px;
+}
+.hero-score-card .hero-score {
+  font-size: 29px;
+}
+.hero-score-card .hero-action {
+  font-size: 11px;
+}
+.network-story-card {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  justify-items: end;
+}
+.hero-risk-card {
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr auto;
+  width: clamp(520px, 100%, 640px);
+  max-width: 100%;
+  min-width: 0;
+  aspect-ratio: 85.6 / 53.98;
+  align-self: center;
+  justify-self: end;
+  padding: clamp(22px, 2.5vw, 36px);
+  border-radius: 28px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 87% 12%,
+      rgba(85, 214, 232, 0.3),
+      transparent 28%
+    ),
+    linear-gradient(135deg, #174879 0%, #0b2746 52%, #071525 100%);
+  transform: perspective(1100px) rotateY(-1.4deg) rotateX(0.8deg);
+}
+.hero-risk-card:hover {
+  transform: perspective(1100px) rotateY(-2.6deg) rotateX(1.5deg)
+    translateY(-2px);
+}
+.hero-risk-card::after {
+  top: 50%;
+  right: clamp(22px, 2.5vw, 36px);
+  width: 36px;
+  height: 28px;
+  border-radius: 9px;
+}
+.risk-card-topline {
+  align-items: center;
+  gap: 12px;
+  color: #d4e8ff;
+  font-family: var(--font-mono);
+  font-size: clamp(7px, 0.7vw, 9px);
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+.risk-card-core {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 18px);
+  min-width: 0;
+  margin: clamp(8px, 1vw, 15px) 0;
+}
+.risk-card-shield {
+  width: clamp(31px, 3.5vw, 44px);
+  height: clamp(35px, 4vw, 50px);
+}
+.risk-card-core > div:nth-child(2),
+.risk-card-action > div,
+.risk-card-case > div {
+  min-width: 0;
+}
+.risk-card-core span,
+.risk-card-action span,
+.risk-card-signals span,
+.risk-card-case span {
+  color: #b9d2eb;
+  font-family: var(--font-mono);
+  font-size: clamp(7px, 0.68vw, 9px);
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  line-height: 1.2;
+  text-transform: none;
+}
+.risk-card-core strong {
+  display: block;
+  color: var(--cyan);
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 52px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.065em;
+  line-height: 0.9;
+}
+.risk-card-core strong small {
+  margin-left: 4px;
+  color: #8fb1d2;
+  font-family: var(--font-ui);
+  font-size: 0.28em;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.risk-card-status {
+  align-self: center;
+  border: 1px solid rgba(245, 185, 66, 0.42);
+  border-radius: 999px;
+  background: rgba(245, 185, 66, 0.12);
+  color: #ffd16b;
+  font-family: var(--font-ui);
+  font-size: clamp(7px, 0.65vw, 9px);
+  line-height: 1.15;
+  padding: 6px 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+.risk-card-action {
+  align-items: center;
+  gap: 16px;
+  padding: clamp(8px, 1vw, 13px) 0;
+}
+.risk-card-action p {
+  max-width: 310px;
+  margin: 3px 0 0;
+  color: #b6cce3;
+  font-family: var(--font-ui);
+  font-size: clamp(8px, 0.75vw, 10px);
+  line-height: 1.28;
+}
+.risk-card-action b {
+  flex: 0 0 auto;
+  color: var(--review);
+  font-family: var(--font-display);
+  font-size: clamp(10px, 1.1vw, 14px);
+  letter-spacing: -0.02em;
+  text-align: right;
+  text-transform: none;
+  white-space: nowrap;
+}
+.risk-card-signals {
+  gap: clamp(6px, 1vw, 14px);
+  padding: clamp(7px, 1vw, 12px) 0;
+}
+.risk-card-signals span {
+  min-width: 0;
+}
+.risk-card-signals b {
+  color: #eff8ff;
+  font-family: var(--font-display);
+  font-size: clamp(16px, 1.9vw, 25px);
+  font-variant-numeric: tabular-nums;
+}
+.risk-card-signals .is-primary {
+  margin: -4px 0;
+  padding: 4px 6px;
+  border-radius: 9px;
+  background: rgba(85, 214, 232, 0.13);
+  color: #c9f9ff;
+}
+.risk-card-signals .is-primary b {
+  color: var(--cyan);
+}
+.risk-card-case {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+.risk-card-case > div:last-child {
+  text-align: right;
+}
+.risk-card-case b {
+  display: block;
+  margin-top: 3px;
+  color: #edf7ff;
+  font-family: var(--font-mono);
+  font-size: clamp(8px, 0.8vw, 10px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.hero-risk-card footer {
+  margin: clamp(9px, 1vw, 13px) calc(clamp(22px, 2.5vw, 36px) * -1)
+    calc(clamp(22px, 2.5vw, 36px) * -1);
+  padding: clamp(7px, 0.85vw, 10px) clamp(22px, 2.5vw, 36px);
+  color: #ffc5c9;
+  font-family: var(--font-ui);
+  font-size: clamp(7px, 0.68vw, 9px);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: none;
+}
+@media (max-width: 1100px) {
+  .public-hero {
+    gap: 46px;
+  }
+  .hero-visual-stack {
+    grid-template-columns: 1fr;
+    gap: 46px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .network-story-card {
+    justify-items: center;
+  }
+  .hero-risk-card {
+    width: min(100%, 640px);
+    justify-self: center;
+  }
+}
+@media (max-width: 600px) {
+  .public-hero {
+    gap: 40px;
+    padding: 56px 0;
+  }
+  .hero-visual-stack {
+    gap: 42px;
+    padding-top: 10px;
+  }
+  .hero-network-illustration {
+    padding: 6px;
+  }
+  .hero-risk-card {
+    aspect-ratio: 85.6 / 53.98;
+    padding: 18px;
+    border-radius: 24px;
+    transform: none;
+  }
+  .hero-risk-card:hover {
+    transform: none;
+  }
+  .risk-card-core {
+    gap: 9px;
+  }
+  .risk-card-status {
+    padding: 4px 6px;
+  }
+  .risk-card-action {
+    gap: 9px;
+  }
+  .risk-card-action p {
+    display: none;
+  }
+  .risk-card-case {
+    gap: 8px;
+  }
+  .hero-risk-card footer {
+    margin: 8px -18px -18px;
+    padding: 7px 18px;
   }
 }
 
@@ -803,16 +1100,7 @@ aside nav a[aria-current="page"] {
   );
 }
 .hero-risk-card::after {
-  top: 54px;
-  right: 22px;
-  width: 42px;
-  height: 34px;
-  border: 1px solid #83ceff88;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #55d6e855, #4da3ff1f);
-  box-shadow:
-    12px 0 0 -10px #55d6e888,
-    0 10px 0 -8px #55d6e866;
+  display: none;
 }
 .hero-risk-card:hover {
   transform: perspective(900px) rotateY(-2deg) rotateX(1deg) translateY(-4px);
@@ -1098,14 +1386,14 @@ aside nav a[aria-current="page"] {
   text-decoration: none;
 }
 .public-main {
-  max-width: 1280px;
+  max-width: 1380px;
 }
 .public-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(420px, 0.98fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 46px;
-  padding: 64px 0 84px;
+  gap: 52px;
+  padding: 96px 0;
 }
 .public-hero > div > p,
 .public-section > p,
@@ -1524,7 +1812,8 @@ aside nav a[aria-current="page"] {
     grid-template-columns: 1fr;
   }
   .public-hero {
-    padding-top: 38px;
+    gap: 46px;
+    padding: 64px 0;
   }
   .product-preview > div:first-child,
   .product-preview > div:last-child {
@@ -1556,7 +1845,7 @@ aside nav a[aria-current="page"] {
   }
   .public-hero,
   .public-section {
-    padding: 46px 0;
+    padding: 56px 0;
   }
   .public-hero h1,
   .public-section h1 {
@@ -1576,161 +1865,217 @@ aside nav a[aria-current="page"] {
   }
 }
 
-/* Final hero layout overrides must follow the base public styles. */
+/* Final Home-story geometry is deliberately last in the public-page cascade. */
+.public-main {
+  max-width: 1380px;
+}
+.public-hero {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 52px;
+  padding: 96px 0;
+}
+.network-story {
+  gap: 20px;
+}
+.network-story-copy {
+  max-width: 720px;
+}
 .hero-visual-stack {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
   align-items: center;
-  gap: clamp(16px, 2.2vw, 28px);
-  padding: 18px;
+  gap: clamp(28px, 4vw, 64px);
+  padding: 26px 0 0;
 }
 .hero-network-illustration {
   width: 100%;
   min-width: 0;
+  padding: 14px;
   overflow: hidden;
 }
 .hero-customer > text {
-  fill: #f4f8ff;
-  font-size: 18px;
-  font-weight: 700;
-  text-anchor: middle;
+  font-size: 22px;
 }
 .hero-customer-labels text {
-  fill: var(--text-secondary);
-  font-family: var(--font-ui);
-  font-size: 9px;
-  font-weight: 500;
-  text-anchor: middle;
+  font-size: 11px;
 }
 .hero-identity > text:not(.illustration-token) {
-  fill: #f4f8ff;
-  font-size: 11px;
-  font-weight: 650;
-  text-anchor: middle;
+  font-size: 13px;
 }
 .hero-identity .illustration-token {
-  fill: #cad9e8;
-  font-family: var(--font-mono);
-  font-size: 7.6px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  text-anchor: middle;
+  font-size: 9px;
 }
 .hero-core > text {
-  fill: #dff7ff;
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-weight: 600;
-  text-anchor: middle;
+  font-size: 12px;
 }
 .hero-score-card text {
-  font-family: var(--font-ui);
-  text-anchor: start;
+  font-size: 11px;
+}
+.hero-score-card .hero-score {
+  font-size: 29px;
 }
 .hero-score-card .hero-action {
-  font-size: 10px;
-  font-weight: 650;
+  font-size: 11px;
+}
+.network-story-card {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  justify-items: end;
 }
 .hero-risk-card {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr auto;
-  align-self: stretch;
-  width: 100%;
-  max-width: 560px;
+  width: clamp(520px, 100%, 640px);
+  max-width: 100%;
   min-width: 0;
-  aspect-ratio: 1 / 1.12;
-  justify-self: stretch;
+  aspect-ratio: 85.6 / 53.98;
+  align-self: center;
+  justify-self: end;
+  padding: clamp(22px, 2.5vw, 36px);
+  border-radius: 28px;
   overflow: hidden;
-  padding: clamp(16px, 2vw, 22px);
-  transform: none;
+  background:
+    radial-gradient(
+      circle at 87% 12%,
+      rgba(85, 214, 232, 0.3),
+      transparent 28%
+    ),
+    linear-gradient(135deg, #174879 0%, #0b2746 52%, #071525 100%);
+  transform: perspective(1100px) rotateY(-1.4deg) rotateX(0.8deg);
 }
 .hero-risk-card:hover {
-  transform: perspective(1000px) rotateX(1deg) rotateY(-1.5deg);
+  transform: perspective(1100px) rotateY(-2.6deg) rotateX(1.5deg)
+    translateY(-2px);
 }
 .risk-card-topline {
-  font-family: var(--font-ui);
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.075em;
-  text-transform: none;
+  align-items: center;
+  gap: 12px;
+  color: #d4e8ff;
+  font-family: var(--font-mono);
+  font-size: clamp(7px, 0.7vw, 9px);
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 .risk-card-core {
-  gap: 11px;
-  margin: 15px 0 11px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 18px);
+  min-width: 0;
+  margin: clamp(8px, 1vw, 15px) 0;
+}
+.risk-card-core > div:nth-child(2),
+.risk-card-action > div,
+.risk-card-case > div {
+  min-width: 0;
 }
 .risk-card-core span,
 .risk-card-action span,
-.risk-card-case span,
-.risk-card-signals span {
+.risk-card-signals span,
+.risk-card-case span {
+  color: #b9d2eb;
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: clamp(7px, 0.68vw, 9px);
   font-weight: 500;
   letter-spacing: 0.025em;
+  line-height: 1.2;
   text-transform: none;
 }
 .risk-card-core strong {
-  font-size: clamp(34px, 4.5vw, 50px);
-  letter-spacing: -0.06em;
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 52px);
+  font-variant-numeric: tabular-nums;
+}
+.risk-card-status {
+  padding: 6px 8px;
+  font-size: clamp(7px, 0.65vw, 9px);
 }
 .risk-card-action {
-  align-items: center;
-  padding: 10px 0;
+  gap: 16px;
+  padding: clamp(8px, 1vw, 13px) 0;
+}
+.risk-card-action p {
+  font-size: clamp(8px, 0.75vw, 10px);
 }
 .risk-card-action b {
-  font-family: var(--font-ui);
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  font-family: var(--font-display);
+  font-size: clamp(10px, 1.1vw, 14px);
   text-transform: none;
 }
 .risk-card-signals {
-  padding: 10px 0;
+  gap: clamp(6px, 1vw, 14px);
+  padding: clamp(7px, 1vw, 12px) 0;
 }
 .risk-card-signals b {
-  font-family: var(--font-display);
-  font-size: 15px;
+  font-size: clamp(16px, 1.9vw, 25px);
 }
 .risk-card-case {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
   align-items: end;
 }
+.risk-card-case > div:last-child {
+  text-align: right;
+}
 .risk-card-case b {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.045em;
+  margin-top: 3px;
+  font-size: clamp(8px, 0.8vw, 10px);
+  letter-spacing: 0.01em;
 }
 .hero-risk-card footer {
-  margin: 13px calc(clamp(16px, 2vw, 22px) * -1)
-    calc(clamp(16px, 2vw, 22px) * -1);
-  padding: 9px clamp(16px, 2vw, 22px);
-  font-family: var(--font-ui);
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.045em;
+  margin: 13px calc(clamp(22px, 2.5vw, 36px) * -1)
+    calc(clamp(22px, 2.5vw, 36px) * -1);
+  padding: 9px clamp(22px, 2.5vw, 36px);
+  font-size: clamp(7px, 0.68vw, 9px);
   text-transform: none;
 }
 @media (max-width: 1100px) {
+  .public-hero {
+    gap: 46px;
+    padding: 64px 0;
+  }
   .hero-visual-stack {
     grid-template-columns: 1fr;
-    max-width: 620px;
+    gap: 46px;
+    max-width: 760px;
     margin: 0 auto;
   }
+  .network-story-card {
+    justify-items: center;
+  }
   .hero-risk-card {
-    width: 100%;
-    max-width: none;
-    aspect-ratio: 1.8 / 1;
+    width: min(100%, 640px);
+    justify-self: center;
   }
 }
 @media (max-width: 600px) {
+  .public-hero {
+    gap: 40px;
+    padding: 56px 0;
+  }
   .hero-visual-stack {
-    padding: 8px 0;
+    gap: 42px;
+    padding-top: 10px;
+  }
+  .hero-network-illustration {
+    padding: 6px;
   }
   .hero-risk-card {
-    aspect-ratio: auto;
-    min-height: 286px;
+    width: 100%;
+    min-height: 0;
+    padding: 18px;
+    border-radius: 24px;
+    transform: none;
   }
   .hero-risk-card:hover {
     transform: none;
   }
+  .risk-card-action p {
+    display: none;
+  }
   .hero-risk-card footer {
-    margin-top: 15px;
+    margin: 8px -18px -18px;
+    padding: 7px 18px;
   }
 }
