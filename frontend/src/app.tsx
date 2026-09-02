@@ -242,6 +242,10 @@ function Overview() {
   const cases = useQuery({ queryKey: ["cases"], queryFn: () => api.cases() });
   const business = useQuery({ queryKey: ["business"], queryFn: api.business });
   const model = useQuery({ queryKey: ["model"], queryFn: api.model });
+  const feedback = useQuery({
+    queryKey: ["feedback-metrics"],
+    queryFn: api.feedbackMetrics,
+  });
   const list = cases.data?.items ?? [];
   const counts = useMemo(
     () =>
@@ -255,18 +259,32 @@ function Overview() {
     ready.isLoading ||
     cases.isLoading ||
     business.isLoading ||
-    model.isLoading
+    model.isLoading ||
+    feedback.isLoading
   )
     return <Skeleton />;
-  if (ready.error || cases.error || business.error || model.error)
+  if (
+    ready.error ||
+    cases.error ||
+    business.error ||
+    model.error ||
+    feedback.error
+  )
     return (
       <ErrorState
-        error={ready.error ?? cases.error ?? business.error ?? model.error}
+        error={
+          ready.error ??
+          cases.error ??
+          business.error ??
+          model.error ??
+          feedback.error
+        }
         retry={() => {
           ready.refetch();
           cases.refetch();
           business.refetch();
           model.refetch();
+          feedback.refetch();
         }}
       />
     );
@@ -400,6 +418,35 @@ function Overview() {
           </p>
         )}
       </section>
+      <section className="panel feedback-summary">
+        <div className="panel-title">
+          <div>
+            <span>FUTURE RETRAINING EVIDENCE</span>
+            <h2>Analyst feedback remains append-only</h2>
+          </div>
+        </div>
+        <div className="feedback-stats">
+          <b>
+            {feedback.data?.confirmed_abuse_count ?? 0}
+            <small>Confirmed abuse</small>
+          </b>
+          <b>
+            {feedback.data?.legitimate_return_count ?? 0}
+            <small>Legitimate</small>
+          </b>
+          <b>
+            {feedback.data?.insufficient_evidence_count ?? 0}
+            <small>Insufficient evidence</small>
+          </b>
+          <b>
+            {feedback.data?.analyst_model_agreement_rate == null
+              ? "Unavailable"
+              : `${(feedback.data.analyst_model_agreement_rate * 100).toFixed(1)}%`}
+            <small>Analyst/model agreement</small>
+          </b>
+        </div>
+        <p>{feedback.data?.definition} No automatic retraining occurs.</p>
+      </section>
       <p className="disclaimer">
         Synthetic held-out performance demonstrates the evaluation pipeline and
         is not a claim of production accuracy.
@@ -512,6 +559,64 @@ function Graph({ id, feedback = false }: { id: string; feedback?: boolean }) {
             No linked identities are safely available. Raw tokens are never
             displayed.
           </p>
+        )}
+        {q.data && (
+          <div className="network-summary">
+            <b>
+              {q.data.statistics.linked_account_count}
+              <small>Linked accounts</small>
+            </b>
+            <b>
+              {q.data.statistics.shared_connection_count}
+              <small>Connections</small>
+            </b>
+            <b>
+              {inr(q.data.statistics.total_connected_return_value_paise)}
+              <small>Connected value</small>
+            </b>
+            <span>
+              {q.data.statistics.connection_types.join(", ") ||
+                "No shared identity types"}
+            </span>
+            <span>
+              Risk bands: {q.data.statistics.risk_distribution.low ?? 0} low ·{" "}
+              {q.data.statistics.risk_distribution.medium ?? 0} medium ·{" "}
+              {q.data.statistics.risk_distribution.high ?? 0} high
+            </span>
+            <span>
+              Observed{" "}
+              {q.data.statistics.first_seen_at
+                ? date(q.data.statistics.first_seen_at)
+                : "Unavailable"}{" "}
+              to{" "}
+              {q.data.statistics.last_seen_at
+                ? date(q.data.statistics.last_seen_at)
+                : "Unavailable"}
+            </span>
+            {q.data.statistics.highest_risk_linked_case && (
+              <Link
+                to={`/cases/${q.data.statistics.highest_risk_linked_case.case_id}`}
+              >
+                Highest linked risk ·{" "}
+                {Math.round(
+                  q.data.statistics.highest_risk_linked_case.risk * 100,
+                )}
+                %
+              </Link>
+            )}
+          </div>
+        )}
+        {q.data?.nodes.some((node) => node.case_id && node.case_id !== id) && (
+          <div className="network-members">
+            <strong>Linked cases</strong>
+            {q.data.nodes
+              .filter((node) => node.case_id && node.case_id !== id)
+              .map((node) => (
+                <Link key={node.id} to={`/cases/${node.case_id}`}>
+                  {node.label} · {Math.round((node.risk ?? 0) * 100)}%
+                </Link>
+              ))}
+          </div>
         )}
       </article>
       {feedback && <FeedbackTools id={id} />}
@@ -690,6 +795,54 @@ function Detail() {
         />
       </section>
       <section className="detail-grid">
+        <article className="panel explanation-panel">
+          <div className="panel-title">
+            <div>
+              <span>DETERMINISTIC EXPLANATION</span>
+              <h2>What moved this assessment</h2>
+            </div>
+            <Badge value={a.uncertainty.state.replaceAll("_", " ")} />
+          </div>
+          <p>{a.explanation.summary}</p>
+          {[
+            ...a.explanation.top_increasing_factors,
+            ...a.explanation.top_reducing_factors,
+          ].map((factor) => (
+            <div
+              className={`factor ${factor.direction}`}
+              key={`${factor.direction}-${factor.feature}`}
+            >
+              <span>{factor.evidence}</span>
+              <i>
+                <em style={{ width: `${factor.strength * 100}%` }} />
+              </i>
+            </div>
+          ))}
+          {!a.explanation.top_increasing_factors.length &&
+            !a.explanation.top_reducing_factors.length && (
+              <p className="empty">
+                No explanation factor crossed its documented threshold.
+              </p>
+            )}
+          <div className="contribution-bars">
+            {Object.entries(a.explanation.signal_contributions).map(
+              ([name, value]) => (
+                <label key={name}>
+                  <span>{name} contribution</span>
+                  <i>
+                    <em style={{ width: `${Math.min(100, value * 100)}%` }} />
+                  </i>
+                  <b>{(value * 100).toFixed(1)}</b>
+                </label>
+              ),
+            )}
+          </div>
+          <p className="uncertainty-copy">
+            {a.uncertainty.reason} This is a data-sufficiency heuristic, not
+            statistical confidence.
+          </p>
+          <p className="disclaimer">{a.explanation.human_review_notice}</p>
+        </article>
         <article className="panel">
           <div className="panel-title">
             <div>
@@ -756,9 +909,21 @@ function Detail() {
 }
 function Performance() {
   const q = useQuery({ queryKey: ["model"], queryFn: api.model });
-  if (q.isLoading) return <Skeleton />;
-  if (q.error || !q.data)
-    return <ErrorState error={q.error} retry={q.refetch} />;
+  const thresholds = useQuery({
+    queryKey: ["thresholds"],
+    queryFn: api.thresholds,
+  });
+  if (q.isLoading || thresholds.isLoading) return <Skeleton />;
+  if (q.error || thresholds.error || !q.data)
+    return (
+      <ErrorState
+        error={q.error ?? thresholds.error}
+        retry={() => {
+          q.refetch();
+          thresholds.refetch();
+        }}
+      />
+    );
   const m = q.data.evaluation.test_metrics;
   return (
     <>
@@ -863,6 +1028,82 @@ function Performance() {
             ))}
           </div>
         </article>
+      </section>
+      <section className="panel threshold-panel">
+        <div className="panel-title">
+          <div>
+            <span>READ-ONLY THRESHOLD ANALYSIS</span>
+            <h2>Validation, locked test and operations</h2>
+          </div>
+        </div>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Policy</th>
+                <th>Thresholds</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1</th>
+                <th>FP / 1,000</th>
+                <th>Verify / review</th>
+                <th>Prevented loss</th>
+                <th>FP cost</th>
+                <th>Net savings</th>
+              </tr>
+            </thead>
+            <tbody>
+              {thresholds.data?.rows.map((row) => (
+                <tr key={row.source}>
+                  <td>
+                    <b>{row.label}</b>
+                    <small>{row.policy_version}</small>
+                  </td>
+                  <td>
+                    {row.verify_threshold.toFixed(2)} /{" "}
+                    {row.manual_review_threshold.toFixed(2)}
+                  </td>
+                  <td>
+                    {row.precision == null
+                      ? "Unavailable"
+                      : `${(row.precision * 100).toFixed(1)}%`}
+                  </td>
+                  <td>
+                    {row.recall == null
+                      ? "Unavailable"
+                      : `${(row.recall * 100).toFixed(1)}%`}
+                  </td>
+                  <td>{row.f1 == null ? "Unavailable" : row.f1.toFixed(3)}</td>
+                  <td>
+                    {row.false_positives_per_1000_legitimate?.toFixed(1) ??
+                      "Unavailable"}
+                  </td>
+                  <td>
+                    {row.verification_rate == null
+                      ? "Unavailable"
+                      : `${(row.verification_rate * 100).toFixed(1)}% / ${((row.manual_review_rate ?? 0) * 100).toFixed(1)}%`}
+                  </td>
+                  <td>
+                    {row.estimated_prevented_loss_paise == null
+                      ? "Unavailable"
+                      : inr(row.estimated_prevented_loss_paise)}
+                  </td>
+                  <td>
+                    {row.false_positive_cost_paise == null
+                      ? "Unavailable"
+                      : inr(row.false_positive_cost_paise)}
+                  </td>
+                  <td>
+                    {row.net_estimated_savings_paise == null
+                      ? "Unavailable"
+                      : inr(row.net_estimated_savings_paise)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="disclaimer">{thresholds.data?.disclosure}</p>
       </section>
     </>
   );

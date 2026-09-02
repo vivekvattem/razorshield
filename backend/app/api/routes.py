@@ -14,6 +14,7 @@ from app.models import (
     AnalystDecision,
     AuditEvent,
     Case,
+    IdentityLink,
     Merchant,
     ModelVersion,
     Order,
@@ -22,8 +23,17 @@ from app.models import (
     RiskAssessment,
 )
 from app.models.enums import AnalystAction, CaseStatus, RiskDecision
-from app.schemas.scoring import AnalystDecisionRequest, AnalystFeedbackRequest, ReturnScoreRequest
+from app.schemas.scoring import (
+    AnalystDecisionRequest,
+    AnalystFeedbackRequest,
+    ExplanationResponse,
+    FeedbackAnalyticsResponse,
+    GraphResponse,
+    ReturnScoreRequest,
+    ThresholdAnalysisResponse,
+)
 from app.services.artifacts import ArtifactUnavailable
+from app.services.intelligence import deterministic_explanation, feedback_analytics, uncertainty_indicator
 from app.services.scoring import score
 
 router = APIRouter()
@@ -188,8 +198,29 @@ def get_case(case_id: str, request: Request) -> dict[str, object]:
                 "evidence": assessment.evidence_snapshot,
                 "model_version": model_version.version,
                 "policy_version": policy_version.version,
+                "explanation": deterministic_explanation(
+                    assessment,
+                    (policy_version.ml_weight, policy_version.graph_weight, policy_version.rule_weight),
+                    model_version.version,
+                    policy_version.version,
+                ),
+                "uncertainty": uncertainty_indicator(
+                    assessment, policy_version.approve_max, policy_version.manual_review_min
+                ),
             },
         }
+
+
+@router.get("/api/v1/cases/{case_id}/explanation", response_model=ExplanationResponse)
+def case_explanation(case_id: str, request: Request) -> dict[str, object]:
+    with request.app.state.database.transaction() as session:
+        case = _get_case(session, case_id)
+        assessment = session.scalar(select(RiskAssessment).where(RiskAssessment.id == case.risk_assessment_id))
+        policy = session.scalar(select(PolicyVersion).where(PolicyVersion.id == assessment.policy_version_id))
+        model = session.scalar(select(ModelVersion).where(ModelVersion.id == assessment.model_version_id))
+        return deterministic_explanation(
+            assessment, (policy.ml_weight, policy.graph_weight, policy.rule_weight), model.version, policy.version
+        )
 
 
 @router.post("/api/v1/cases/{case_id}/decision")
@@ -279,41 +310,125 @@ def export_case(case_id: str, request: Request) -> dict[str, object]:
         }
 
 
-@router.get("/api/v1/cases/{case_id}/graph")
+def _as_utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+
+@router.get("/api/v1/cases/{case_id}/graph", response_model=GraphResponse)
 def case_graph(case_id: str, request: Request) -> dict[str, object]:
     with request.app.state.database.transaction() as session:
         case = _get_case(session, case_id)
         assessment = session.scalar(select(RiskAssessment).where(RiskAssessment.id == case.risk_assessment_id))
-        features = assessment.feature_snapshot
-        account_count = max(1, int(features.get("component_size", 1)))
-        identity_features = {
-            "device": "shared_device_accounts",
-            "payment": "shared_payment_accounts",
-            "address": "shared_address_accounts",
-            "phone": "shared_phone_accounts",
-            "ip": "shared_ip_accounts",
-        }
-        nodes = [{"id": "case", "type": "case"}]
+        returned = session.scalar(select(ReturnRequest).where(ReturnRequest.id == assessment.return_request_id))
+        event_time = _as_utc(returned.event_time)
+        origin_links = session.scalars(
+            select(IdentityLink).where(
+                IdentityLink.customer_id == returned.customer_id,
+                IdentityLink.merchant_id == case.merchant_id,
+                IdentityLink.first_seen_at <= event_time,
+            )
+        ).all()
+        tokens = {(link.identity_type, link.token_hash) for link in origin_links}
+        linked_identity_rows: list[IdentityLink] = []
+        for identity_type, token_hash in sorted(tokens, key=lambda item: (item[0].value, item[1])):
+            linked_identity_rows.extend(
+                session.scalars(
+                    select(IdentityLink).where(
+                        IdentityLink.merchant_id == case.merchant_id,
+                        IdentityLink.identity_type == identity_type,
+                        IdentityLink.token_hash == token_hash,
+                        IdentityLink.first_seen_at <= event_time,
+                    )
+                ).all()
+            )
+        customer_ids = sorted({returned.customer_id, *(row.customer_id for row in linked_identity_rows)}, key=str)[:40]
+        account_ids = {customer_id: f"linked-account-{index + 1}" for index, customer_id in enumerate(customer_ids)}
+        linked_cases = session.execute(
+            select(Case, RiskAssessment, ReturnRequest, Order)
+            .join(RiskAssessment, RiskAssessment.id == Case.risk_assessment_id)
+            .join(ReturnRequest, ReturnRequest.id == RiskAssessment.return_request_id)
+            .join(Order, Order.id == ReturnRequest.order_id)
+            .where(
+                Case.merchant_id == case.merchant_id,
+                ReturnRequest.customer_id.in_(customer_ids),
+                ReturnRequest.event_time <= event_time,
+            )
+            .order_by(RiskAssessment.final_risk.desc())
+            .limit(50)
+        ).all()
+        case_by_customer: dict[object, tuple[Case, RiskAssessment]] = {}
+        for linked_case, linked_assessment, linked_return, _ in linked_cases:
+            case_by_customer.setdefault(linked_return.customer_id, (linked_case, linked_assessment))
+        nodes: list[dict[str, object]] = [{"id": "case", "type": "case", "label": "Current case"}]
         edges: list[dict[str, str]] = []
-        for index in range(account_count):
-            account_id = f"linked-account-{index + 1}"
-            nodes.append({"id": account_id, "type": "customer"})
-            edges.append({"source": account_id, "target": "case", "type": "assessment"})
-        for identity_type, feature_name in identity_features.items():
-            if int(features.get(feature_name, 0)) <= 0:
+        for customer_id, account_id in account_ids.items():
+            linked = case_by_customer.get(customer_id)
+            node: dict[str, object] = {
+                "id": account_id,
+                "type": "customer",
+                "label": account_id.replace("-", " ").title(),
+            }
+            if linked:
+                node["case_id"] = str(linked[0].case_id)
+                node["risk"] = linked[1].final_risk
+            nodes.append(node)
+        identity_nodes: dict[tuple[object, str], str] = {}
+        for row in linked_identity_rows:
+            if row.customer_id not in account_ids:
                 continue
-            identity_id = f"masked-{identity_type}"
-            nodes.append({"id": identity_id, "type": identity_type})
-            for index in range(min(account_count, int(features[feature_name]) + 1)):
-                edges.append({"source": f"linked-account-{index + 1}", "target": identity_id, "type": identity_type})
+            key = (row.identity_type, row.token_hash)
+            if key not in identity_nodes:
+                identity_id = f"masked-{row.identity_type.value.lower()}-{len(identity_nodes) + 1}"
+                identity_nodes[key] = identity_id
+                nodes.append(
+                    {
+                        "id": identity_id,
+                        "type": row.identity_type.value.lower(),
+                        "label": f"Shared {row.identity_type.value.lower()}",
+                    }
+                )
+            edges.append(
+                {
+                    "source": account_ids[row.customer_id],
+                    "target": identity_nodes[key],
+                    "type": row.identity_type.value.lower(),
+                }
+            )
+        nodes = nodes[:50]
+        allowed_node_ids = {str(node["id"]) for node in nodes}
+        edges = [edge for edge in edges if edge["source"] in allowed_node_ids and edge["target"] in allowed_node_ids][
+            :100
+        ]
+        connection_types = sorted({edge["type"] for edge in edges})
+        risks = [linked_assessment.final_risk for _, linked_assessment, _, _ in linked_cases]
+        highest = linked_cases[0] if linked_cases else None
+        timestamps = [row.first_seen_at for row in linked_identity_rows] + [
+            min(_as_utc(row.last_seen_at), event_time) for row in linked_identity_rows
+        ]
+        timestamps = [_as_utc(value) for value in timestamps]
         return {
             "nodes": nodes,
             "edges": edges,
             "statistics": {
                 "degree": assessment.feature_snapshot.get("degree", 0),
-                "component_size": account_count,
-                "identity_types": sum(1 for feature in identity_features.values() if features.get(feature, 0)),
+                "component_size": len(customer_ids),
+                "linked_account_count": max(0, len(customer_ids) - 1),
+                "shared_connection_count": len(edges),
+                "identity_types": len(connection_types),
+                "connection_types": connection_types,
+                "total_connected_return_value_paise": sum(row[3].order_value_paise for row in linked_cases),
+                "highest_risk_linked_case": (
+                    {"case_id": str(highest[0].case_id), "risk": highest[1].final_risk} if highest else None
+                ),
+                "first_seen_at": min(timestamps).isoformat() if timestamps else None,
+                "last_seen_at": max(timestamps).isoformat() if timestamps else None,
+                "risk_distribution": {
+                    "low": sum(risk < 0.1 for risk in risks),
+                    "medium": sum(0.1 <= risk < 0.2 for risk in risks),
+                    "high": sum(risk >= 0.2 for risk in risks),
+                },
             },
+            "bounded": {"max_nodes": 50, "max_edges": 100, "hop_depth": 1},
         }
 
 
@@ -352,6 +467,63 @@ def business_metrics(request: Request) -> dict[str, object]:
         },
         "live": {"assessments": sum(decision_counts.values()), "decision_counts": decision_counts},
         "synthetic_only": True,
+    }
+
+
+@router.get("/api/v1/metrics/feedback", response_model=FeedbackAnalyticsResponse)
+def feedback_metrics(request: Request) -> dict[str, object]:
+    with request.app.state.database.transaction() as session:
+        return feedback_analytics(session)
+
+
+@router.get("/api/v1/metrics/thresholds", response_model=ThresholdAnalysisResponse)
+def threshold_metrics(request: Request) -> dict[str, object]:
+    """Expose immutable artifact analytics; unavailable values remain null."""
+    artifact = request.app.state.artifacts.load()
+    policy = artifact.metadata["policy"]
+    metrics = artifact.evaluation["test_metrics"]
+    rates = metrics["decision_rates"]
+    rows = [
+        {
+            "label": "Validation-selected policy",
+            "source": "validation",
+            "policy_version": artifact.evaluation["policy_version"],
+            "verify_threshold": policy["verify_threshold"],
+            "manual_review_threshold": policy["review_threshold"],
+            "net_estimated_savings_paise": policy.get("validation_net_savings_paise"),
+            "note": "Thresholds selected on validation data; other row metrics were not persisted.",
+        },
+        {
+            "label": "Locked held-out report",
+            "source": "locked_test",
+            "policy_version": artifact.evaluation["policy_version"],
+            "verify_threshold": policy["verify_threshold"],
+            "manual_review_threshold": policy["review_threshold"],
+            "precision": metrics["precision"],
+            "recall": metrics["recall"],
+            "f1": metrics["f1"],
+            "false_positives_per_1000_legitimate": metrics["false_positives_per_1000_legitimate"],
+            "verification_rate": rates.get("VERIFY"),
+            "manual_review_rate": rates.get("MANUAL_REVIEW"),
+            "estimated_prevented_loss_paise": metrics["estimated_prevented_loss_paise"],
+            "false_positive_cost_paise": metrics["false_positive_cost_paise"],
+            "net_estimated_savings_paise": metrics["net_estimated_savings_paise"],
+            "note": "Reported exactly once on the untouched synthetic test split.",
+        },
+        {
+            "label": "Operational demo policy",
+            "source": "operational",
+            "policy_version": "operational-demo-v2",
+            "verify_threshold": 0.1,
+            "manual_review_threshold": 0.2,
+            "note": "Validation-derived demo guardrails; no held-out performance claim is available.",
+        },
+    ]
+    return {
+        "rows": rows,
+        "read_only": True,
+        "synthetic_only": True,
+        "disclosure": artifact.evaluation["disclosure"],
     }
 
 

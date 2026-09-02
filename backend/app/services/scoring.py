@@ -27,6 +27,7 @@ from app.models.enums import CaseStatus, IdentityType, MerchantStatus, ReturnSta
 from app.risk.offline import ALL_FEATURES, MODEL_VERSION, CostConfig, decide, graph_risk, rule_engine
 from app.schemas.scoring import ReturnScoreRequest
 from app.services.artifacts import ArtifactService
+from app.services.intelligence import deterministic_explanation, uncertainty_indicator
 
 OPERATIONAL_POLICY_VERSION = "operational-demo-v2"
 
@@ -191,6 +192,10 @@ def _response(assessment: RiskAssessment, evidence: list[dict[str, object]], *, 
         "evidence": evidence or assessment.evidence_snapshot.get("rules", []),
         "model_version": MODEL_VERSION,
         "policy_version": OPERATIONAL_POLICY_VERSION,
+        "explanation": deterministic_explanation(
+            assessment, (0.7, 0.2, 0.1), MODEL_VERSION, OPERATIONAL_POLICY_VERSION
+        ),
+        "uncertainty": uncertainty_indicator(assessment, 0.1, 0.2),
         "idempotent_replay": replay,
     }
 

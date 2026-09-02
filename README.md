@@ -137,3 +137,25 @@ Vercel: import the same repository with root directory `frontend`, set
 `VITE_API_BASE_URL` to the Render API HTTPS URL, and deploy. `vercel.json` preserves SPA
 routes on refresh. Roll back by redeploying a prior Git commit; database migrations are
 forward-only, so take a managed PostgreSQL backup before schema-changing releases.
+
+## Explainable network intelligence
+
+Case responses and `GET /api/v1/cases/{case_id}/explanation` expose a deterministic,
+non-causal explanation from the stored point-in-time feature snapshot. Factors are
+ordered by normalized documented threshold strength; hybrid contributions are exactly
+`ML probability × 0.70`, `graph risk × 0.20`, and `rule risk × 0.10` for the versioned
+policy. No SHAP or LLM attribution is implied.
+
+The case graph is a bounded (50 nodes, 100 edges), merchant-scoped one-hop view using
+identity observations no later than the return timestamp. Only masked identifiers leave
+the API. `GET /api/v1/metrics/thresholds` presents immutable validation, locked-test and
+operational-demo policies; missing persisted metrics are `null`, never reconstructed from
+test labels. `GET /api/v1/metrics/feedback` uses the latest append-only feedback per case.
+Agreement means confirmed abuse on a flagged case or legitimate feedback on an approved
+case; insufficient evidence is excluded.
+
+Data sufficiency is explicitly heuristic, not statistical confidence: fewer than three
+prior 90-day orders with no linked account is `INSUFFICIENT_HISTORY`; a score within 0.05
+of either operational threshold is `BORDERLINE`; otherwise it is `HIGH_CONFIDENCE`.
+These signals support human review only and never produce automatic rejection or
+retraining. All reported performance remains synthetic.
