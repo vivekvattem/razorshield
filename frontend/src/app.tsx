@@ -188,7 +188,10 @@ function Metric({
 }) {
   return (
     <article className={`metric ${tone ?? ""}`}>
-      <span>{label}</span>
+      <div className="metric-header">
+        <span>{label}</span>
+        <i aria-hidden="true" />
+      </div>
       <strong>{value}</strong>
       {context && <small>{context}</small>}
     </article>
