@@ -5,6 +5,7 @@ import {
   NavLink,
   Route,
   Routes,
+  useLocation,
   useParams,
 } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -85,6 +86,14 @@ function InfoTooltip({ label, copy }: { label: string; copy: string }) {
   );
 }
 function ApplicationLayout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const viewTransitionDocument = document as Document & {
+      startViewTransition?: (update: () => void) => { finished: Promise<void> };
+    };
+    viewTransitionDocument.startViewTransition?.(() => undefined);
+  }, [location.pathname]);
   const client = useQueryClient();
   const ready = useQuery({
     queryKey: ["shell-ready"],
@@ -160,7 +169,9 @@ function ApplicationLayout({ children }: { children: React.ReactNode }) {
           <small>Updated {lastUpdated}</small>
           <span className="profile">AV</span>
         </div>
-        {children}
+        <div className="route-content" key={location.pathname} tabIndex={-1}>
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -865,6 +876,26 @@ const featureCards = [
   "Honest Evaluation|Report held-out results with a clear synthetic-data limitation.",
 ];
 function PublicLayout({ children }: { children: React.ReactNode }) {
+  const [activeSection, setActiveSection] = useState("how-it-works");
+
+  useEffect(() => {
+    const sections = ["how-it-works", "capabilities", "results", "safety"]
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => section !== null);
+    if (!sections.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) setActiveSection(visible.target.id);
+      },
+      { rootMargin: "-96px 0px -55%", threshold: [0.1, 0.35, 0.7] },
+    );
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="public-shell">
       <header className="public-nav">
@@ -872,15 +903,30 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
           Razor<span>Shield</span>
         </Link>
         <nav aria-label="Product navigation">
-          <a href="#how-it-works">How it works</a>
-          <a href="#capabilities">Capabilities</a>
-          <a href="#results">Results</a>
-          <a href="#safety">Safety</a>
+          {["how-it-works", "capabilities", "results", "safety"].map((id) => (
+            <a
+              key={id}
+              className={activeSection === id ? "is-active" : ""}
+              href={`#${id}`}
+            >
+              {id === "how-it-works"
+                ? "How it works"
+                : id[0].toUpperCase() + id.slice(1)}
+            </a>
+          ))}
         </nav>
         <div className="public-nav-actions">
-          <Link to="/networks">View live demo</Link>
+          <Link className="public-button secondary" to="/networks">
+            <span>View live demo</span>
+            <svg className="button-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6 4.5 11 8l-5 3.5z" />
+            </svg>
+          </Link>
           <Link className="public-button" to="/risk-center">
-            Open Risk Center
+            <span>Open Risk Center</span>
+            <svg className="button-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M3 8h9M8 4l4 4-4 4" />
+            </svg>
           </Link>
         </div>
       </header>
@@ -1062,14 +1108,28 @@ function Home() {
             automatically rejecting legitimate customers.
           </h2>
           <div className="actions">
-            <Link className="cta" to="/risk-center">
-              Open Risk Center
+            <Link className="cta primary" to="/risk-center">
+              <span>Open Risk Center</span>
+              <svg
+                className="button-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
+                <path d="M3 8h9M8 4l4 4-4 4" />
+              </svg>
             </Link>
             <Link
               className="cta secondary"
               to={ring ? `/cases/${ring.case_id}` : "/networks"}
             >
-              Explore a detected network
+              <span>Explore a detected network</span>
+              <svg
+                className="button-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
+                <path d="M4 4h8v8H4zM6 8h4M8 6v4" />
+              </svg>
             </Link>
           </div>
           <div className="trust-row">

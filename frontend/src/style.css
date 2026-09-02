@@ -887,3 +887,212 @@ aside nav a:focus-visible {
   color: var(--text-primary);
   outline: 1px solid #4da3ff66;
 }
+
+/* Shared navigation actions */
+html {
+  scroll-behavior: smooth;
+}
+.route-content {
+  view-transition-name: route-content;
+  animation: route-content-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.button-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  transition: transform 200ms ease;
+}
+.public-button,
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 47px;
+  padding: 0 24px;
+  border: 1px solid rgba(106, 185, 255, 0.55);
+  border-radius: 14px;
+  background: linear-gradient(110deg, #277ed6, #37b9d3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 10px 24px rgba(36, 126, 214, 0.22);
+  color: #f7fbff;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    filter 200ms ease,
+    background 200ms ease;
+}
+.public-button.secondary,
+.cta.secondary {
+  border-color: rgba(132, 171, 207, 0.32);
+  background: rgba(13, 33, 56, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 18px rgba(1, 9, 19, 0.16);
+  color: #d8e8fa;
+}
+.public-button:hover,
+.cta:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 14px 28px rgba(36, 126, 214, 0.3);
+}
+.public-button.secondary:hover,
+.cta.secondary:hover {
+  border-color: rgba(132, 202, 255, 0.62);
+  background: rgba(27, 62, 96, 0.82);
+}
+.public-button:hover .button-icon,
+.cta:hover .button-icon {
+  transform: translateX(3px);
+}
+.public-button:active,
+.cta:active {
+  transform: translateY(0) scale(0.98);
+}
+.public-button:focus-visible,
+.cta:focus-visible,
+.public-nav nav a:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.public-nav nav a {
+  position: relative;
+}
+.public-section[id] {
+  scroll-margin-top: 92px;
+}
+.public-nav nav a.is-active {
+  color: var(--text-primary);
+}
+.public-nav nav a.is-active::after {
+  position: absolute;
+  right: 0;
+  bottom: -11px;
+  left: 0;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--cyan);
+  content: "";
+}
+.button-approve,
+.button-verify,
+.button-review,
+.button-ghost {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 650;
+  transition:
+    transform 200ms ease,
+    filter 200ms ease,
+    box-shadow 200ms ease;
+}
+.button-approve {
+  background: rgba(53, 211, 153, 0.16);
+  border-color: rgba(53, 211, 153, 0.42);
+  color: #8af0c8;
+}
+.button-verify {
+  background: rgba(245, 185, 66, 0.16);
+  border-color: rgba(245, 185, 66, 0.42);
+  color: #ffd36d;
+}
+.button-review {
+  background: rgba(255, 107, 115, 0.16);
+  border-color: rgba(255, 107, 115, 0.42);
+  color: #ffb0b5;
+}
+.button-ghost {
+  background: transparent;
+  border-color: rgba(132, 171, 207, 0.34);
+  color: var(--text-secondary);
+}
+.button-approve:hover,
+.button-verify:hover,
+.button-review:hover,
+.button-ghost:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+@keyframes route-content-enter {
+  from {
+    opacity: 0.72;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 600px) {
+  .actions {
+    flex-wrap: wrap;
+  }
+  .public-button,
+  .cta {
+    padding: 0 20px;
+  }
+}
+@media (max-width: 390px) {
+  .actions .cta {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .route-content {
+    animation: none;
+  }
+  .public-button,
+  .cta,
+  .button-icon {
+    transition: none;
+  }
+  .public-button:hover,
+  .cta:hover {
+    transform: none;
+  }
+  .public-button:hover .button-icon,
+  .cta:hover .button-icon {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(route-content) {
+    animation: route-old 0.16s ease both;
+  }
+  ::view-transition-new(route-content) {
+    animation: route-new 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+@keyframes route-old {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes route-new {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
