@@ -103,6 +103,17 @@ aside nav a:hover {
 .sidebar-foot small {
   font-size: 11px;
 }
+.demo-environment {
+  width: fit-content;
+  border: 1px solid rgba(85, 214, 232, 0.25);
+  border-radius: 999px;
+  background: rgba(85, 214, 232, 0.08);
+  color: #9ce7f0;
+  padding: 5px 8px;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
 main {
   width: min(1320px, 100%);
   min-width: 0;

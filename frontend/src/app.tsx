@@ -142,8 +142,12 @@ function ApplicationLayout({ children }: { children: React.ReactNode }) {
           </NavLink>
         </nav>
         <div className="sidebar-foot">
-          <b>Demo workspace</b>
-          <small>Synthetic data · Analyst view</small>
+          <span className="demo-environment">Synthetic Demo Environment</span>
+          <b>Human review required</b>
+          <small>Model {model.data?.model_version ?? "Loading"}</small>
+          <small>
+            Policy {model.data?.operational_policy_version ?? "Loading"}
+          </small>
         </div>
       </aside>
       <main>

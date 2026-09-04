@@ -32,6 +32,18 @@ class Settings(BaseSettings):
             raise ValueError("CORS origins must not contain blank values")
         return value
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_postgres_driver(cls, value: object) -> object:
+        """Render supplies a generic PostgreSQL URL; select the installed psycopg v3 driver."""
+        if not isinstance(value, str):
+            return value
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+psycopg://", 1)
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+        return value
+
     @model_validator(mode="after")
     def validate_production_safety(self) -> Settings:
         if self.cors_allow_credentials and "*" in self.cors_origins:
@@ -41,6 +53,10 @@ class Settings(BaseSettings):
                 raise ValueError("production requires a PostgreSQL database URL")
             if not self.secret_key or len(self.secret_key) < 32:
                 raise ValueError("production requires a secret key of at least 32 characters")
+            if not self.cors_origins or "*" in self.cors_origins:
+                raise ValueError("production requires explicit CORS origins")
+            if any(not origin.startswith("https://") for origin in self.cors_origins):
+                raise ValueError("production CORS origins must use HTTPS")
         return self
 
 

@@ -126,7 +126,8 @@ export interface TestMetrics {
 }
 export interface ModelMetrics {
   model_version: string;
-  evaluation: { test_metrics: TestMetrics };
+  operational_policy_version: string;
+  evaluation: { test_metrics: TestMetrics; policy_version: string };
   synthetic_only: boolean;
 }
 export interface BusinessMetrics {
@@ -135,7 +136,9 @@ export interface BusinessMetrics {
   live: { assessments: number; decision_counts: Record<RiskDecision, number> };
   synthetic_only: boolean;
 }
-const base = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const base =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.DEV ? "http://localhost:8000" : "");
 export class ApiError extends Error {
   constructor(
     message: string,

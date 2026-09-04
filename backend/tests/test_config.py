@@ -21,5 +21,27 @@ def test_valid_production_settings() -> None:
         environment="production",
         database_url="postgresql+psycopg://user:pass@localhost/db",
         secret_key="a" * 32,
+        cors_origins=["https://razorshield.example"],
     )
     assert settings.environment == "production"
+
+
+def test_render_postgres_url_is_normalized() -> None:
+    settings = Settings(
+        environment="production",
+        database_url="postgresql://user:pass@db.example/razorshield",
+        secret_key="a" * 32,
+        cors_origins=["https://razorshield.vercel.app"],
+    )
+    assert settings.database_url.startswith("postgresql+psycopg://")
+
+
+def test_production_rejects_wildcard_or_insecure_cors() -> None:
+    for origins in (["*"], ["http://localhost:5173"]):
+        with pytest.raises(ValidationError, match="CORS"):
+            Settings(
+                environment="production",
+                database_url="postgresql://user:pass@db.example/razorshield",
+                secret_key="a" * 32,
+                cors_origins=origins,
+            )

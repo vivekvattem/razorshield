@@ -34,7 +34,7 @@ from app.schemas.scoring import (
 )
 from app.services.artifacts import ArtifactUnavailable
 from app.services.intelligence import deterministic_explanation, feedback_analytics, uncertainty_indicator
-from app.services.scoring import score
+from app.services.scoring import OPERATIONAL_POLICY_VERSION, score
 
 router = APIRouter()
 
@@ -437,6 +437,7 @@ def model_metrics(request: Request) -> dict[str, object]:
     artifact = request.app.state.artifacts.load()
     return {
         "model_version": artifact.metadata["model_version"],
+        "operational_policy_version": OPERATIONAL_POLICY_VERSION,
         "evaluation": artifact.evaluation,
         "synthetic_only": True,
     }

@@ -10,7 +10,7 @@ COPY backend/scripts ./scripts
 # Regenerate the versioned deployment artifact deterministically during image build.
 RUN python scripts/generate_synthetic_data.py --output-dir /workspace/data/generated/default \
     && python scripts/run_offline_detector.py \
-    && test -s /workspace/artifacts/generated/offline-hgb-v1/model.joblib
+    && python -c "from pathlib import Path; from app.services.artifacts import ArtifactService; artifact = ArtifactService(Path('/workspace/artifacts/generated/offline-hgb-v1')).load(); print('verified artifact', artifact.metadata['model_version'], artifact.metadata['model_checksum'])"
 COPY backend/scripts/container_start.sh /usr/local/bin/container_start
 RUN chmod +x /usr/local/bin/container_start
 EXPOSE 8000
