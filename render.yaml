@@ -1,6 +1,7 @@
 services:
   - type: web
     name: razorshield-api
+    plan: free
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
@@ -18,5 +19,6 @@ services:
         value: "false"
 databases:
   - name: razorshield-db
+    plan: free
     databaseName: razorshield
     user: razorshield
